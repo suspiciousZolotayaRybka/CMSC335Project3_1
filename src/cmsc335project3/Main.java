@@ -1,5 +1,17 @@
 package cmsc335project3;
 
+/* CMSC 335 7382 Object-Oriented and Concurrent Programming
+ * Professor Amitava Karmaker
+ * Project 3
+ * Main.java
+ * Isaac Finehout
+ * 13 April 2025
+ *
+ * This is the main class that runs the Project 3 program for CMSC 335.
+ * @author fineh
+ *
+ */
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;

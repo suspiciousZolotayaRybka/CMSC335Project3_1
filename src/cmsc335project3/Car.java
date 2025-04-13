@@ -1,17 +1,17 @@
 package cmsc335project3;
 
-import javafx.scene.effect.Light.Point;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 
 public class Car implements Runnable {
 
 	// Declare variables
-	private Point positionCar;
+	private Point2D positionCar;
 	private Polygon collisionShapeCar;
 	private Color colorCar;
 	private double speedMilesPerHourCar;
-	private Direction directionCar;
+	private Velocity velocityCar;
 
 	/**
 	 * Car constructor
@@ -22,14 +22,44 @@ public class Car implements Runnable {
 	 * @param speedMilesPerHourCar speed car is travelling
 	 * @param directionCar         direction (north or south) car is travelling
 	 */
-	public Car(Point positionCar, Polygon collisionShapeCar, Color colorCar, double speedMilesPerHourCar,
-			Direction directionCar) {
+	public Car(Point2D positionCar, Color colorCar, double speedMilesPerHourCar, Velocity velocityCar) {
 		this.positionCar = positionCar;
-		this.collisionShapeCar = collisionShapeCar;
 		this.colorCar = colorCar;
+		updateCollisionShapeCar();
 		this.speedMilesPerHourCar = speedMilesPerHourCar;
-		this.directionCar = directionCar;
+		this.velocityCar = velocityCar;
 
+	}
+
+	public void updateCollisionShapeCar() {
+		collisionShapeCar = new Polygon();
+		collisionShapeCar.setFill(colorCar);
+		collisionShapeCar.getPoints().addAll(new Double[] {
+			//@formatter:off
+			positionCar.getX(), positionCar.getY() + 20,               // bottom left (front bumper)
+			positionCar.getX() + 10, positionCar.getY() + 10,          // hood front
+			positionCar.getX() + 20, positionCar.getY() + 10,          // hood back
+			positionCar.getX() + 25, positionCar.getY(),               // windshield front
+			positionCar.getX() + 45, positionCar.getY(),               // roof front
+			positionCar.getX() + 55, positionCar.getY() + 10,          // rear window
+			positionCar.getX() + 70, positionCar.getY() + 10,          // trunk top
+			positionCar.getX() + 80, positionCar.getY() + 20,          // bottom right (rear bumper)
+
+			// Rear wheel
+			positionCar.getX() + 65, positionCar.getY() + 20,
+			positionCar.getX() + 65, positionCar.getY() + 25,
+			positionCar.getX() + 75, positionCar.getY() + 25,
+			positionCar.getX() + 75, positionCar.getY() + 20,
+
+			// Front wheel
+			positionCar.getX() + 10, positionCar.getY() + 20,
+			positionCar.getX() + 10, positionCar.getY() + 25,
+			positionCar.getX() + 20, positionCar.getY() + 25,
+			positionCar.getX() + 20, positionCar.getY() + 20,
+
+			positionCar.getX(), positionCar.getY() + 20                // close shape
+			//@formatter:on
+		});
 	}
 
 	@Override
@@ -41,7 +71,7 @@ public class Car implements Runnable {
 	/**
 	 * @return the positionCar
 	 */
-	public Point getPositionCar() {
+	public Point2D getPositionCar() {
 		return positionCar;
 	}
 
@@ -67,17 +97,18 @@ public class Car implements Runnable {
 	}
 
 	/**
-	 * @return the directionCar
+	 * @return the velocityCar
 	 */
-	public Direction getDirectionCar() {
-		return directionCar;
+	public Velocity getVelocityCar() {
+		return velocityCar;
 	}
 
 	/**
 	 * @param positionCar the positionCar to set
 	 */
-	public void setPositionCar(Point positionCar) {
+	public void setPositionCar(Point2D positionCar) {
 		this.positionCar = positionCar;
+		// Update the car's collision object
 	}
 
 	/**
@@ -102,10 +133,10 @@ public class Car implements Runnable {
 	}
 
 	/**
-	 * @param directionCar the directionCar to set
+	 * @param velocityCar the velocityCar to set
 	 */
-	public void setDirectionCar(Direction directionCar) {
-		this.directionCar = directionCar;
+	public void setDirectionCar(Velocity velocityCar) {
+		this.velocityCar = velocityCar;
 	}
 
 }
