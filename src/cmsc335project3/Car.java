@@ -10,7 +10,6 @@ public class Car implements Runnable {
 	private Point2D positionCar;
 	private Polygon collisionShapeCar;
 	private Color colorCar;
-	private double speedMilesPerHourCar;
 	private Velocity velocityCar;
 
 	/**
@@ -22,19 +21,24 @@ public class Car implements Runnable {
 	 * @param speedMilesPerHourCar speed car is travelling
 	 * @param directionCar         direction (north or south) car is travelling
 	 */
-	public Car(Point2D positionCar, Color colorCar, double speedMilesPerHourCar, Velocity velocityCar) {
+	public Car(Point2D positionCar, Color colorCar, Velocity velocityCar) {
 		this.positionCar = positionCar;
 		this.colorCar = colorCar;
-		updateCollisionShapeCar();
-		this.speedMilesPerHourCar = speedMilesPerHourCar;
 		this.velocityCar = velocityCar;
-
+		updateCollisionShapeCar();
 	}
 
+	/**
+	 * Assign border information to the collision shape according to Car's Point2D
+	 */
 	public void updateCollisionShapeCar() {
 		collisionShapeCar = new Polygon();
 		collisionShapeCar.setFill(colorCar);
-		collisionShapeCar.getPoints().addAll(new Double[] {
+
+		// If the car is going east, its collision shape will face that way.
+		// If the car is going west, its collision shape will face that way.
+		if (velocityCar.getDirection() == Direction.EAST) {
+			collisionShapeCar.getPoints().addAll(new Double[] {
 			//@formatter:off
 			positionCar.getX(), positionCar.getY() + 20,               // bottom left (front bumper)
 			positionCar.getX() + 10, positionCar.getY() + 10,          // hood front
@@ -59,11 +63,43 @@ public class Car implements Runnable {
 
 			positionCar.getX(), positionCar.getY() + 20                // close shape
 			//@formatter:on
-		});
+
+			});
+		} else if (velocityCar.getDirection() == Direction.WEST) {
+			collisionShapeCar.getPoints().addAll(new Double[] {
+			//@formatter:off
+			positionCar.getX(), positionCar.getY() + 20,               // bottom left (front bumper)
+			positionCar.getX() - 10, positionCar.getY() + 10,          // hood front
+			positionCar.getX() - 20, positionCar.getY() + 10,          // hood back
+			positionCar.getX() - 25, positionCar.getY(),               // windshield front
+			positionCar.getX() - 45, positionCar.getY(),               // roof front
+			positionCar.getX() - 55, positionCar.getY() + 10,          // rear window
+			positionCar.getX() - 70, positionCar.getY() + 10,          // trunk top
+			positionCar.getX() - 80, positionCar.getY() + 20,          // bottom right (rear bumper)
+
+			// Rear wheel
+			positionCar.getX() - 65, positionCar.getY() + 20,
+			positionCar.getX() - 65, positionCar.getY() + 25,
+			positionCar.getX() - 75, positionCar.getY() + 25,
+			positionCar.getX() - 75, positionCar.getY() + 20,
+
+			// Front wheel
+			positionCar.getX() - 10, positionCar.getY() + 20,
+			positionCar.getX() - 10, positionCar.getY() + 25,
+			positionCar.getX() - 20, positionCar.getY() + 25,
+			positionCar.getX() - 20, positionCar.getY() + 20,
+
+			positionCar.getX(), positionCar.getY() + 20                // close shape
+			//@formatter:on
+
+			});
+		}
 	}
 
 	@Override
 	public void run() {
+		// TODO make car drive in one direction
+
 		System.out.println("Car is running");
 
 	}
@@ -87,13 +123,6 @@ public class Car implements Runnable {
 	 */
 	public Color getColorCar() {
 		return colorCar;
-	}
-
-	/**
-	 * @return the speedMilesPerHourCar
-	 */
-	public double getSpeedMilesPerHourCar() {
-		return speedMilesPerHourCar;
 	}
 
 	/**
@@ -123,13 +152,6 @@ public class Car implements Runnable {
 	 */
 	public void setColorCar(Color colorCar) {
 		this.colorCar = colorCar;
-	}
-
-	/**
-	 * @param speedMilesPerHourCar the speedMilesPerHourCar to set
-	 */
-	public void setSpeedMilesPerHourCar(double speedMilesPerHourCar) {
-		this.speedMilesPerHourCar = speedMilesPerHourCar;
 	}
 
 	/**

@@ -25,14 +25,14 @@ public class Main extends Application {
 			Label hello = new Label("Hello World");
 			BorderPane root = new BorderPane();
 			root.setCenter(hello);
-
+//TODO get lights, autopilot, and second window showing stats
 			System.out.printf("IS CENTER: %s", root.isCenterShape());
 //			System.out.printf("IS LEFT: %s", root.);
 //			System.out.printf("IS RIGHT: %s", root.isCenterShape());
 //			System.out.printf("IS UP: %s", root.isCenterShape());
 //			System.out.printf("IS DOWN: %s", root.isCenterShape());
 
-			Scene scene = new Scene(root, 400, 400);
+			Scene scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
