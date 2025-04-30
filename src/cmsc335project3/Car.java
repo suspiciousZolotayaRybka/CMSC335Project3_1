@@ -1,5 +1,17 @@
 package cmsc335project3;
 
+/* CMSC 335 7382 Object-Oriented and Concurrent Programming
+ * Professor Amitava Karmaker
+ * Project 3
+ * Explosion.java
+ * Isaac Finehout
+ * 23 April 2025
+ *
+ * This is the class that creates runnable cars Project 3
+ * @author fineh
+ *
+ */
+
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
@@ -11,6 +23,7 @@ public class Car implements Runnable {
 	private Polygon collisionShapeCar;
 	private Color colorCar;
 	private Velocity velocityCar;
+	private boolean isOnScreen = true;
 
 	/**
 	 * Car constructor
@@ -99,8 +112,25 @@ public class Car implements Runnable {
 	@Override
 	public void run() {
 		// TODO make car drive in one direction
+		while (isOnScreen) {
+			// @formatter:off
+			double newX = velocityCar.getDirection() == Direction.EAST ?
+							positionCar.getX() + velocityCar.getSpeed()
+							:
+								// Else direction is West
+							positionCar.getX() - velocityCar.getSpeed();
+			// @formatter:on
+			positionCar = new Point2D(newX, positionCar.getY());
+			System.out.println(positionCar);
+			updateCollisionShapeCar();
 
-		System.out.println("Car is running");
+			// TODO DELETE THIS MOVE TO CRITICAL SECTION OF PASSIVE OBJECT
+			if ((positionCar.getX() > 1000) || (positionCar.getX() < 0)) {
+				isOnScreen = false;
+			}
+			Autopilot.updateRoot();
+			// TODO DELETE THIS MOVE TO CRITICAL SECTION OF PASSIVE OBJECT
+		}
 
 	}
 

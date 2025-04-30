@@ -7,15 +7,14 @@ import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 public class TestingSpace extends Application {
 
-	private Pane root;
-	private final ArrayList<Car> cars = new ArrayList<Car>();
-	private Scene scene;
-	private Rectangle rectangle;
+	private static Pane root;
+	private static final ArrayList<Car> cars = new ArrayList<Car>();
+	private static Scene scene;
+	private static Road road;
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -24,11 +23,11 @@ public class TestingSpace extends Application {
 			cars.add(startCarInd0());
 			cars.add(startCarInd1());
 
-			Road road = new Road(1000, new Point2D(0, 150));
+			road = new Road(1000, new Point2D(0, 150));
 
 			root = new Pane();
-			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar(),
-					cars.get(1).getCollisionShapeCar());
+			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar());
+			(new Thread(cars.get(0))).start();
 
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -51,6 +50,18 @@ public class TestingSpace extends Application {
 		Color color = Color.BLUE;
 		Velocity velocity = Velocity.WEST_SLOW;
 		return new Car(point2D, color, velocity);
+	}
+
+	public static Pane getRoot() {
+		return root;
+	}
+
+	public static ArrayList<Car> getCars() {
+		return cars;
+	}
+
+	public static Road getRoad() {
+		return road;
 	}
 
 	public static void main(String[] args) {
