@@ -19,8 +19,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 
-public class Road implements Runnable/** TODO Remove Runnable implementation? */
-{
+public class Road {
 
 	// TODO getters and setters or final?
 	// Declare variables
@@ -126,12 +125,6 @@ public class Road implements Runnable/** TODO Remove Runnable implementation? */
 	 */
 	public Group getCollisionShapeRoad() {
 		return collisionShapeRoad;
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-
 	}
 
 }

@@ -26,6 +26,8 @@ public class Main extends Application {
 			BorderPane root = new BorderPane();
 			root.setCenter(hello);
 //TODO get lights, autopilot, and second window showing stats
+// TODO create producers, consumers, and then use autopilot as the passive to manage threads
+// TODO create initial popup requesting how many cars and which directions, along with seconds between each car entering the screen. Maybe more?
 			System.out.printf("IS CENTER: %s", root.isCenterShape());
 //			System.out.printf("IS LEFT: %s", root.);
 //			System.out.printf("IS RIGHT: %s", root.isCenterShape());

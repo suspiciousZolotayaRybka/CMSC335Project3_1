@@ -16,7 +16,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 
-public class Explosion implements Runnable {
+public class Explosion {
 
 	// Declare variables
 	private final Point2D positionExplosion;
@@ -72,12 +72,6 @@ public class Explosion implements Runnable {
 		        centerX + (innerRadius * Math.cos((7.5 * Math.PI) / 4)), centerY + (innerRadius * Math.sin((7.5 * Math.PI) / 4)),
 			//@formatter:on
 		});
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-
 	}
 
 	/**

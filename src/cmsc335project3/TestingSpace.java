@@ -11,13 +11,13 @@ import javafx.stage.Stage;
 
 public class TestingSpace extends Application {
 
-	private static Pane root;
-	private static final ArrayList<Car> cars = new ArrayList<Car>();
-	private static Scene scene;
-	private static Road road;
+	private Pane root;
+	private final ArrayList<Car> cars = new ArrayList<Car>();
+	private Scene scene;
+	private Road road;
 
 	@Override
-	public void start(Stage primaryStage) {
+	public synchronized void start(Stage primaryStage) {
 		try {
 
 			cars.add(startCarInd0());
@@ -27,12 +27,16 @@ public class TestingSpace extends Application {
 
 			root = new Pane();
 			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar());
-			(new Thread(cars.get(0))).start();
 
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
+
+			Autopilot autopilot = new Autopilot(cars, root);
+			CarProducer carProducer = new CarProducer(autopilot, cars);
+			CarProducer carConsumer = new CarProducer(autopilot, cars);
+			(new Thread(carProducer)).start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -52,16 +56,53 @@ public class TestingSpace extends Application {
 		return new Car(point2D, color, velocity);
 	}
 
-	public static Pane getRoot() {
+	/**
+	 * @return the root
+	 */
+	public Pane getRoot() {
 		return root;
 	}
 
-	public static ArrayList<Car> getCars() {
+	/**
+	 * @return the cars
+	 */
+	public ArrayList<Car> getCars() {
 		return cars;
 	}
 
-	public static Road getRoad() {
+	/**
+	 * @return the scene
+	 */
+	public Scene getScene() {
+		return scene;
+	}
+
+	/**
+	 * @return the road
+	 */
+	public Road getRoad() {
 		return road;
+	}
+
+	/**
+	 * @param root the root to set
+	 */
+	public void setRoot(Pane root) {
+		this.root = root;
+	}
+
+	/**
+	 * @param scene the scene to set
+	 */
+	public void setScene(Scene scene) {
+		this.scene = scene;
+	}
+
+	/**
+	 * @param road the road to set
+	 */
+	public void setRoad(Road road) {
+		this.road = road;
 	}
 
 	public static void main(String[] args) {
