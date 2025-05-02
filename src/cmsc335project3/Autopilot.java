@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javafx.scene.layout.Pane;
+import javafx.application.Application;
+import javafx.geometry.Point2D;
+import javafx.scene.paint.Color;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
@@ -20,24 +22,26 @@ import javafx.scene.layout.Pane;
 
 public class Autopilot {
 
+	// Concurrency items
 	private final ReentrantLock autopilotLock = new ReentrantLock();
 	private final Condition carOnScreen = autopilotLock.newCondition();
 	private final Condition needCar = autopilotLock.newCondition();
 	private final Condition needEmptyCarSpace = autopilotLock.newCondition();
+	private final Condition simulationIsRunning = autopilotLock.newCondition();
 
 	// TODO change to better data structure
-	private final ArrayList<Car> cars;
-	private int lastItem;
-	private int numberOfItems;
-	private final Pane root;
+	private final ArrayList<Car> cars = new ArrayList<Car>();
+	private final Road road = new Road(1000, new Point2D(0, 150));
+	private final int lastItem;
+	private final int numberOfItems;
 
 	/**
-	 *
-	 * @param cars the cars to set
+	 * Constructor for autopilot
 	 */
-	public Autopilot(ArrayList<Car> cars, Pane root) {
-		this.root = root;
-		this.cars = cars;
+	public Autopilot() {
+		// TODO randomize cars made each time
+		cars.add(startCarInd0());
+		cars.add(startCarInd1());
 		numberOfItems = 0;
 		lastItem = 0;
 	}
@@ -53,9 +57,9 @@ public class Autopilot {
 			// TODO critical section of updating pane
 			// TODO add car then call synchronized method or something here that loops to
 			// move the car? then signals a waiter if the car reaches edge of screen?
-			root.getChildren().add(car.getCollisionShapeCar());
-			lastItem = (++lastItem % cars.size());
-			numberOfItems++;
+//			root.getChildren().add(car.getCollisionShapeCar());
+//			lastItem = (++lastItem % cars.size());
+//			numberOfItems++;
 
 			if (autopilotLock.hasWaiters(needCar)) {
 				needCar.signal();
@@ -71,6 +75,86 @@ public class Autopilot {
 
 	public void takeCarFromSimulationAndDelete() {
 
+	}
+
+	public static void main(String[] args) {
+
+		Autopilot autopilot = new Autopilot();
+		TestingSpace.setAutopilot(autopilot);
+		Application.launch(TestingSpace.class, args);
+
+		CarProducer carProducer = new CarProducer(autopilot);
+		(new Thread(carProducer)).start();
+	}
+
+	/**
+	 * @return the autopilotLock
+	 */
+	public ReentrantLock getAutopilotLock() {
+		return autopilotLock;
+	}
+
+	/**
+	 * @return the carOnScreen
+	 */
+	public Condition getCarOnScreen() {
+		return carOnScreen;
+	}
+
+	/**
+	 * @return the needCar
+	 */
+	public Condition getNeedCar() {
+		return needCar;
+	}
+
+	/**
+	 * @return the needEmptyCarSpace
+	 */
+	public Condition getNeedEmptyCarSpace() {
+		return needEmptyCarSpace;
+	}
+
+	/**
+	 * @return the cars
+	 */
+	public ArrayList<Car> getCars() {
+		return cars;
+	}
+
+	/**
+	 * @return the road
+	 */
+	public Road getRoad() {
+		return road;
+	}
+
+	/**
+	 * @return the lastItem
+	 */
+	public int getLastItem() {
+		return lastItem;
+	}
+
+	/**
+	 * @return the numberOfItems
+	 */
+	public int getNumberOfItems() {
+		return numberOfItems;
+	}
+
+	private static Car startCarInd0() {
+		Point2D point2D = new Point2D(0, 175);
+		Color color = Color.RED;
+		Velocity velocity = Velocity.EAST_SLOW;
+		return new Car(point2D, color, velocity);
+	}
+
+	private static Car startCarInd1() {
+		Point2D point2D = new Point2D(180, 125);
+		Color color = Color.BLUE;
+		Velocity velocity = Velocity.WEST_SLOW;
+		return new Car(point2D, color, velocity);
 	}
 
 }

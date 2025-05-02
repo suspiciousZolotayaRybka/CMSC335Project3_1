@@ -1,59 +1,31 @@
 package cmsc335project3;
 
-import java.util.ArrayList;
-
 import javafx.application.Application;
-import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class TestingSpace extends Application {
+public class TestingSpace extends Application implements Runnable {
 
 	private Pane root;
-	private final ArrayList<Car> cars = new ArrayList<Car>();
 	private Scene scene;
-	private Road road;
+	private static Autopilot autopilot;
 
 	@Override
-	public synchronized void start(Stage primaryStage) {
+	public void start(Stage primaryStage) {
 		try {
 
-			cars.add(startCarInd0());
-			cars.add(startCarInd1());
-
-			road = new Road(1000, new Point2D(0, 150));
-
 			root = new Pane();
-			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar());
+			root.getChildren().add(autopilot.getRoad().getCollisionShapeRoad());
 
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
 
-			Autopilot autopilot = new Autopilot(cars, root);
-			CarProducer carProducer = new CarProducer(autopilot, cars);
-			CarProducer carConsumer = new CarProducer(autopilot, cars);
-			(new Thread(carProducer)).start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private static Car startCarInd0() {
-		Point2D point2D = new Point2D(0, 175);
-		Color color = Color.RED;
-		Velocity velocity = Velocity.EAST_SLOW;
-		return new Car(point2D, color, velocity);
-	}
-
-	private static Car startCarInd1() {
-		Point2D point2D = new Point2D(180, 125);
-		Color color = Color.BLUE;
-		Velocity velocity = Velocity.WEST_SLOW;
-		return new Car(point2D, color, velocity);
 	}
 
 	/**
@@ -64,24 +36,10 @@ public class TestingSpace extends Application {
 	}
 
 	/**
-	 * @return the cars
-	 */
-	public ArrayList<Car> getCars() {
-		return cars;
-	}
-
-	/**
 	 * @return the scene
 	 */
 	public Scene getScene() {
 		return scene;
-	}
-
-	/**
-	 * @return the road
-	 */
-	public Road getRoad() {
-		return road;
 	}
 
 	/**
@@ -98,15 +56,17 @@ public class TestingSpace extends Application {
 		this.scene = scene;
 	}
 
-	/**
-	 * @param road the road to set
-	 */
-	public void setRoad(Road road) {
-		this.road = road;
+	public static void setAutopilot(Autopilot autopilot) {
+		TestingSpace.autopilot = autopilot;
 	}
 
 	public static void main(String[] args) {
 		launch(args);
+	}
+
+	@Override
+	public void run() {
+		launch();
 	}
 }
 

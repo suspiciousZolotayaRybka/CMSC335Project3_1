@@ -1,7 +1,5 @@
 package cmsc335project3;
 
-import java.util.ArrayList;
-
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
  * Project 3
@@ -18,7 +16,6 @@ import java.util.ArrayList;
 public class CarProducer implements Runnable {
 
 	private final Autopilot autopilot;
-	private final ArrayList<Car> cars;
 	// TODO verify this is the best data structure
 	// Queue FIFO may be more efficient
 
@@ -27,9 +24,8 @@ public class CarProducer implements Runnable {
 	 *             critical sections of code.
 	 * @param cars the array list for cars in the simulation
 	 */
-	public CarProducer(Autopilot ap, ArrayList<Car> cars) {
+	public CarProducer(Autopilot ap) {
 		autopilot = ap;
-		this.cars = cars;
 	}
 
 	/**
@@ -39,7 +35,7 @@ public class CarProducer implements Runnable {
 	public void run() {
 		try {
 			// TODO anbother for loop here or in autopilot with a loop that moves cars??
-			for (Car car : cars) {
+			for (Car car : autopilot.getCars()) {
 				System.out.println("Car placed in sim at: " + car.getPositionCar().toString());// TODO delete
 				Thread.sleep(1000);
 				autopilot.putCarInSimulationFullSpeed(car);
