@@ -10,6 +10,7 @@ public class TestingSpace extends Application implements Runnable {
 	private Pane root;
 	private Scene scene;
 	private static Autopilot autopilot;
+	private static TestingSpace javaGraphicalUserInterfaceInstance = new TestingSpace();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -60,6 +61,29 @@ public class TestingSpace extends Application implements Runnable {
 		TestingSpace.autopilot = autopilot;
 	}
 
+	/**
+	 * @return the autopilot
+	 */
+	public static Autopilot getAutopilot() {
+		return autopilot;
+	}
+
+	/**
+	 * @return the javaGraphicalUserInterfaceInstance
+	 */
+	public static TestingSpace getJavaGraphicalUserInterfaceInstance() {
+		return javaGraphicalUserInterfaceInstance;
+	}
+
+	/**
+	 * @param javaGraphicalUserInterfaceInstance the
+	 *                                           javaGraphicalUserInterfaceInstance
+	 *                                           to set
+	 */
+	public static void setJavaGraphicalUserInterfaceInstance(TestingSpace javaGraphicalUserInterfaceInstance) {
+		TestingSpace.javaGraphicalUserInterfaceInstance = javaGraphicalUserInterfaceInstance;
+	}
+
 	public static void main(String[] args) {
 		launch(args);
 	}
@@ -72,12 +96,22 @@ public class TestingSpace extends Application implements Runnable {
 
 		int count = 1;
 
+		// Sleep until the root is ready
+		while (root == null) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {
+				System.out.println("Interrupted Exception in TestingSpace.java, run() method. Stack Trace below");
+				ie.printStackTrace();
+			}
+		}
+
 		while (autopilot.getIsSimulationRunning()) {
 			try {
 				// TODO only change if changes are made in objects on panel
 				System.out.println("Updated frame: " + ++count);
 				autopilot.updatePane(root);
-				Thread.sleep(5);
+				Thread.sleep(1000);
 			} catch (InterruptedException ie) {
 				System.out.println("Interrupted Exception in TestingSpace.java, run() method. Stack Trace below");
 				ie.printStackTrace();

@@ -106,13 +106,14 @@ public class Autopilot {
 
 		Autopilot autopilot = new Autopilot();
 		TestingSpace.setAutopilot(autopilot);
+
 		TestingSpace testingSpace = new TestingSpace();
 		(new Thread(testingSpace)).start();
 
-//		Application.launch(TestingSpace.class, args);
+		TestingSpace.getJavaGraphicalUserInterfaceInstance().launch(TestingSpace.class, args);
 
-		CarProducer carProducer = new CarProducer(autopilot);
-		(new Thread(carProducer)).start();
+//		CarProducer carProducer = new CarProducer(autopilot);
+//		(new Thread(carProducer)).start();
 	}
 
 	/**
