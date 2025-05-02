@@ -64,9 +64,26 @@ public class TestingSpace extends Application implements Runnable {
 		launch(args);
 	}
 
+	/**
+	 * Update the pane, 20 fps (50 ms)
+	 */
 	@Override
 	public void run() {
-		launch();
+
+		int count = 1;
+
+		while (autopilot.getIsSimulationRunning()) {
+			try {
+				// TODO only change if changes are made in objects on panel
+				System.out.println("Updated frame: " + ++count);
+				autopilot.updatePane(root);
+				Thread.sleep(5);
+			} catch (InterruptedException ie) {
+				System.out.println("Interrupted Exception in TestingSpace.java, run() method. Stack Trace below");
+				ie.printStackTrace();
+			}
+		}
+
 	}
 }
 

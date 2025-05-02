@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javafx.application.Application;
 import javafx.geometry.Point2D;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
@@ -27,7 +27,7 @@ public class Autopilot {
 	private final Condition carOnScreen = autopilotLock.newCondition();
 	private final Condition needCar = autopilotLock.newCondition();
 	private final Condition needEmptyCarSpace = autopilotLock.newCondition();
-	private final Condition simulationIsRunning = autopilotLock.newCondition();
+	private final boolean isSimulationRunning = true;
 
 	// TODO change to better data structure
 	private final ArrayList<Car> cars = new ArrayList<Car>();
@@ -77,11 +77,39 @@ public class Autopilot {
 
 	}
 
+	public void updatePane(Pane root) {
+
+		try {
+			autopilotLock.lock();
+//			while (numberOfItems >= cars.size()) {
+//				needEmptyCarSpace.await();
+//			} TODO while method to check for race condition? or does TestingSpace.run cover it?
+
+			root.getChildren().clear();
+			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar());
+			// TODO test for changes in objects and don;'t update if no changes
+
+//			if (autopilotLock.hasWaiters(needCar)) {
+//				needCar.signal();
+//			}
+
+		} catch (Exception e) { // TODO see if InterruptedException specific?
+			System.out.println("Exception in Autopilot.java, updatePane() method. Stack Trace below");
+			e.printStackTrace();
+		} finally {
+			autopilotLock.unlock();
+		}
+
+	}
+
 	public static void main(String[] args) {
 
 		Autopilot autopilot = new Autopilot();
 		TestingSpace.setAutopilot(autopilot);
-		Application.launch(TestingSpace.class, args);
+		TestingSpace testingSpace = new TestingSpace();
+		(new Thread(testingSpace)).start();
+
+//		Application.launch(TestingSpace.class, args);
 
 		CarProducer carProducer = new CarProducer(autopilot);
 		(new Thread(carProducer)).start();
@@ -141,6 +169,13 @@ public class Autopilot {
 	 */
 	public int getNumberOfItems() {
 		return numberOfItems;
+	}
+
+	/**
+	 * @return the simulationIsRunning
+	 */
+	public boolean getIsSimulationRunning() {
+		return isSimulationRunning;
 	}
 
 	private static Car startCarInd0() {

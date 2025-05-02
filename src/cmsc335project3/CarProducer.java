@@ -34,7 +34,7 @@ public class CarProducer implements Runnable {
 	@Override
 	public void run() {
 		try {
-			// TODO anbother for loop here or in autopilot with a loop that moves cars??
+			// TODO another for loop here or in autopilot with a loop that moves cars??
 			for (Car car : autopilot.getCars()) {
 				System.out.println("Car placed in sim at: " + car.getPositionCar().toString());// TODO delete
 				Thread.sleep(1000);
