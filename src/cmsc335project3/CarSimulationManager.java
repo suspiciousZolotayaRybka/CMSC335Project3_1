@@ -1,6 +1,7 @@
 package cmsc335project3;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -8,6 +9,7 @@ import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Shape;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
@@ -32,7 +34,7 @@ public class CarSimulationManager {
 
 	// TODO change to better data structure
 	private final TestingSpace testingSpace; // TODO change to main
-	private final ArrayList<Car> cars = new ArrayList<Car>();
+	private final ArrayList<Car> cars;
 	private final Road road = new Road(1000, new Point2D(0, 150));
 	private int lastItem;
 	private int numberOfItems;
@@ -44,8 +46,7 @@ public class CarSimulationManager {
 		this.testingSpace = testingSpace;
 
 		// TODO make simulation according to customer requirements
-		cars.add(startCarInd0());
-		cars.add(startCarInd1());
+		cars = this.createRandomizedCars();
 		numberOfItems = 0;
 		lastItem = 0;
 	}
@@ -60,29 +61,49 @@ public class CarSimulationManager {
 
 			// The direction and speed of the car to move
 			Direction direction;
-			double speed;
+			double speedMilesPerHour;
 
 			for (Car car : cars) {
 
-				// Update the car location based on direction and speed
-				direction = car.getVelocityCar().getDirection();
-				speed = car.getVelocityCar().getSpeed();
+				if (car.getIsInitializedOnScreen()) {
+					// Update the car location based on direction and speed
+					direction = car.getVelocityCar().getDirection();
+					speedMilesPerHour = car.getVelocityCar().getSpeed().getMiles()
+							/ car.getVelocityCar().getSpeed().getHours();
 
 				//@formatter:off
-				double acceleration =
-						direction == Direction.EAST ?
-								speed :
-speed * -1;
+				double acceleration = 0.1 *
+						(direction == Direction.EAST ?
+								speedMilesPerHour :
+									speedMilesPerHour * -1);
 				//@formatter:on
-				car.setPositionCar(
-						new Point2D(car.getPositionCar().getX() + acceleration, car.getPositionCar().getY()));
-				Platform.runLater(() -> {
-					// Remove, update, then add the car back
-					testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
-					car.updateCollisionShapeCar();
-					testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
-				});
-				System.out.println("Moving: " + car);
+					car.setPositionCar(
+							new Point2D(car.getPositionCar().getX() + acceleration, car.getPositionCar().getY()));
+					Platform.runLater(() -> {
+						// Remove, update, then add the car back
+						testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
+						car.updateCollisionShapeCar();
+						testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+
+						// Check for collisions with other cars, and make them explode
+						for (Car car_j : cars) {
+							if (car != car_j) {
+								Shape intersection = Shape.intersect(car.getCollisionShapeCar(),
+										car_j.getCollisionShapeCar());
+								if ((intersection.getBoundsInLocal().getWidth() > 0)
+										&& (intersection.getBoundsInLocal().getHeight() > 0)) {
+									System.out.println("BOOM");
+									testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
+									testingSpace.getRoot().getChildren().remove(car_j.getCollisionShapeCar());
+									cars.remove(car);
+									cars.remove(car_j);
+									break;// TODO
+								}
+							}
+						}
+
+					});
+				}
 			}
 		} catch (InterruptedException ie) {
 			ie.printStackTrace();
@@ -91,7 +112,11 @@ speed * -1;
 		}
 	}
 
-	public void putCarInSimulationFullSpeed(Car car) {
+	/**
+	 *
+	 * @param car the car to put in the simulation
+	 */
+	public void putCarInSimulation(Car car) {
 
 		try {
 			carSimulationManagerLock.lock();
@@ -101,7 +126,10 @@ speed * -1;
 
 			// Add the car to the highway
 			Platform.runLater(() -> {
+				System.out.println(
+						"CarSimulatorManagerCriticalSection:Car placed in sim at: " + car.getPositionCar().toString());
 				testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+
 			});
 			lastItem = (++lastItem % cars.size());
 			numberOfItems++;
@@ -109,7 +137,8 @@ speed * -1;
 			if (carSimulationManagerLock.hasWaiters(needCar)) {
 				needCar.signal();
 			}
-
+			// Allow the moveCar method to move the car
+			car.setIsInitializedOnScreen(true);
 		} catch (InterruptedException ie) {
 			System.out.println(
 					"Interrupted Exception in CarSimulationManager.java, putCarInSimulationFullSpeed(Car car) method. Stack Trace below");
@@ -185,61 +214,43 @@ speed * -1;
 		this.isSimulationRunning = isSimulationRunning;
 	}
 
-	private static Car startCarInd0() {
-		Point2D point2D = new Point2D(0, 175);
-		Color color = Color.RED;
-		Velocity velocity = Velocity.EAST_SLOW;
-		return new Car(point2D, color, velocity);
-	}
+	/**
+	 *
+	 * @return
+	 */
+	private ArrayList<Car> createRandomizedCars() {
+		Random random = new Random();
+		ArrayList<Car> cars = new ArrayList<Car>();
+		Velocity velocity = null;
+		Direction direction = null;
+		Speed speed = null;
+		Point2D point2D = null;
+		Color color = null;
+		Car car = null;
+		int numCars = random.nextInt(3, 8);
 
-	private static Car startCarInd1() {
-		Point2D point2D = new Point2D(180, 125);
-		Color color = Color.BLUE;
-		Velocity velocity = Velocity.WEST_SLOW;
-		return new Car(point2D, color, velocity);
+		for (int i = 0; i < numCars; i++) {
+
+			if (random.nextBoolean()) {
+				direction = Direction.EAST;
+			} else {
+				direction = Direction.WEST;
+			}
+
+			switch (random.nextInt(3)) {
+			case 0 -> velocity = (direction == Direction.EAST ? Velocity.EAST_FIVE_MPH : Velocity.WEST_FIVE_MPH);
+			case 1 -> velocity = (direction == Direction.EAST ? Velocity.EAST_TEN_MPH : Velocity.WEST_TEN_MPH);
+			case 2 -> velocity = (direction == Direction.EAST ? Velocity.EAST_FIFTEEN_MPH : Velocity.WEST_FIFTEEN_MPH);
+			}
+
+			point2D = new Point2D(random.nextDouble(100, 900), direction == Direction.EAST ? 160 : 120);
+
+			color = new Color(random.nextDouble(1.0), random.nextDouble(1.0), random.nextDouble(1.0), 1.0);
+
+			cars.add(new Car(point2D, color, velocity));
+		}
+
+		return cars;
 	}
 
 }
-
-//public static void updateRoot() {
-//
-//	try {
-//		carSimulationManagerLock.lock();
-//		cars = TestingSpace.getCars();
-//
-//		Thread.sleep(2000);
-//		TestingSpace.getRoot().getChildren().clear();
-//		TestingSpace.getRoot().getChildren().addAll(TestingSpace.getRoad().getCollisionShapeRoad(),
-//				cars.get(0).getCollisionShapeCar());
-//
-//	} catch (InterruptedException ie) {
-//	} finally {
-//		carSimulationManagerLock.unlock();
-//	}
-//
-//}
-
-//@Override
-//public void run() {
-//	// TODO make car drive in one direction
-//	while (isOnScreen) {
-//		// @formatter:off
-//		double newX = velocityCar.getDirection() == Direction.EAST ?
-//						positionCar.getX() + velocityCar.getSpeed()
-//						:
-//							// Else direction is West
-//						positionCar.getX() - velocityCar.getSpeed();
-//		// @formatter:on
-//		positionCar = new Point2D(newX, positionCar.getY());
-//		System.out.println(positionCar);
-//		updateCollisionShapeCar();
-//
-//		// TODO DELETE THIS MOVE TO CRITICAL SECTION OF PASSIVE OBJECT
-//		if ((positionCar.getX() > 1000) || (positionCar.getX() < 0)) {
-//			isOnScreen = false;
-//		}
-//		Autopilot.updateRoot();
-//		// TODO DELETE THIS MOVE TO CRITICAL SECTION OF PASSIVE OBJECT
-//	}
-//
-//}

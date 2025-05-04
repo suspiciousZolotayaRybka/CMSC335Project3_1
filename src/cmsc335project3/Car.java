@@ -23,6 +23,7 @@ public class Car {
 	private Polygon collisionShapeCar;
 	private Color colorCar;
 	private Velocity velocityCar;
+	private boolean isInitializedOnScreen = false;
 
 	/**
 	 * Car constructor
@@ -106,6 +107,7 @@ public class Car {
 
 			});
 		}
+
 	}
 
 	/**
@@ -137,6 +139,13 @@ public class Car {
 	}
 
 	/**
+	 * @return the isInitializedOnScreen
+	 */
+	public boolean getIsInitializedOnScreen() {
+		return isInitializedOnScreen;
+	}
+
+	/**
 	 * @param positionCar the positionCar to set
 	 */
 	public void setPositionCar(Point2D positionCar) {
@@ -163,6 +172,14 @@ public class Car {
 	 */
 	public void setDirectionCar(Velocity velocityCar) {
 		this.velocityCar = velocityCar;
+	}
+
+	/**
+	 *
+	 * @param isInitializedOnScreen the isInitializedOnScreen to set
+	 */
+	public void setIsInitializedOnScreen(boolean isInitializedOnScreen) {
+		this.isInitializedOnScreen = isInitializedOnScreen;
 	}
 
 }

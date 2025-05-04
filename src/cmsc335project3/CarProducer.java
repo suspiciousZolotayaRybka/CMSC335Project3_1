@@ -34,11 +34,11 @@ public class CarProducer implements Runnable {
 	@Override
 	public void run() {
 		try {
-			// TODO another for loop here or in autopilot with a loop that moves cars??
 			for (Car car : carSimulationManager.getCars()) {
-				System.out.println("Car placed in sim at: " + car.getPositionCar().toString());// TODO delete
+				System.out.println("CarProducerRunMethod:Car placed in sim at: " + car.getPositionCar().toString());// TODO//
+																													// delete
+				carSimulationManager.putCarInSimulation(car);
 				Thread.sleep(1000);
-				carSimulationManager.putCarInSimulationFullSpeed(car);
 			}
 		} catch (InterruptedException ie) {
 			System.out.println("Interrupted Exception in CarProducer.java, run() method. Stack Trace below");

@@ -23,14 +23,15 @@ public class CarMover implements Runnable {
 				Thread.sleep(50);
 				carSimulationManager.moveCars();
 				// TODO delete block
-				System.out.printf("Frame %d|%d%n", frameCount++, secondCount);
+//				System.out.printf("Second=%d,Frame=%d%n", secondCount, frameCount);
 				if ((frameCount % 20) == 0) {
 					frameCount = 0;
 					secondCount++;
-					if (secondCount == 10) {
+					if (secondCount == 100) {
 						carSimulationManager.setSimulationRunning(false);
 					}
 				}
+				frameCount++;
 				// TODO delete block
 
 			}
