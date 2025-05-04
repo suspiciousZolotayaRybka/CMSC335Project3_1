@@ -15,7 +15,7 @@ package cmsc335project3;
 
 public class CarProducer implements Runnable {
 
-	private final Autopilot autopilot;
+	private final CarSimulationManager carSimulationManager;
 	// TODO verify this is the best data structure
 	// Queue FIFO may be more efficient
 
@@ -24,8 +24,8 @@ public class CarProducer implements Runnable {
 	 *             critical sections of code.
 	 * @param cars the array list for cars in the simulation
 	 */
-	public CarProducer(Autopilot ap) {
-		autopilot = ap;
+	public CarProducer(CarSimulationManager carSimulationManager) {
+		this.carSimulationManager = carSimulationManager;
 	}
 
 	/**
@@ -35,10 +35,10 @@ public class CarProducer implements Runnable {
 	public void run() {
 		try {
 			// TODO another for loop here or in autopilot with a loop that moves cars??
-			for (Car car : autopilot.getCars()) {
+			for (Car car : carSimulationManager.getCars()) {
 				System.out.println("Car placed in sim at: " + car.getPositionCar().toString());// TODO delete
 				Thread.sleep(1000);
-				autopilot.putCarInSimulationFullSpeed(car);
+				carSimulationManager.putCarInSimulationFullSpeed(car);
 			}
 		} catch (InterruptedException ie) {
 			System.out.println("Interrupted Exception in CarProducer.java, run() method. Stack Trace below");
@@ -52,8 +52,8 @@ public class CarProducer implements Runnable {
 	 *
 	 * @return the autopilot
 	 */
-	public Autopilot getAutopilot() {
-		return autopilot;
+	public CarSimulationManager getAutopilot() {
+		return carSimulationManager;
 	}
 
 }

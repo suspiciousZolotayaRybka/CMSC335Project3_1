@@ -3,7 +3,7 @@ package cmsc335project3;
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
  * Project 3
- * Main.java
+ * CarSimulationMain.java
  * Isaac Finehout
  * 13 April 2025
  *
@@ -14,27 +14,30 @@ package cmsc335project3;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
-public class Main extends Application {
+public class CarSimulationMain extends Application {
+
+	private Pane root;
+	private Scene scene;
+	private final CarSimulationManager carSimulationManager;
+
+	public CarSimulationMain() {
+		// TODO Before making the manager, add customer requirements
+		carSimulationManager = new CarSimulationManager();
+	}
+
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			Label hello = new Label("Hello World");
-			BorderPane root = new BorderPane();
-			root.setCenter(hello);
+			root = new Pane();
+			root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
 //TODO get lights, autopilot, and second window showing stats
 // TODO create producers, consumers, and then use autopilot as the passive to manage threads
 // TODO create initial popup requesting how many cars and which directions, along with seconds between each car entering the screen. Maybe more?
-			System.out.printf("IS CENTER: %s", root.isCenterShape());
-//			System.out.printf("IS LEFT: %s", root.);
-//			System.out.printf("IS RIGHT: %s", root.isCenterShape());
-//			System.out.printf("IS UP: %s", root.isCenterShape());
-//			System.out.printf("IS DOWN: %s", root.isCenterShape());
 
-			Scene scene = new Scene(root, 1000, 400);
+			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();

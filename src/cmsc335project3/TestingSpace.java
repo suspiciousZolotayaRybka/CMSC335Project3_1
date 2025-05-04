@@ -9,15 +9,14 @@ public class TestingSpace extends Application implements Runnable {
 
 	private Pane root;
 	private Scene scene;
-	private static Autopilot autopilot;
-	private static TestingSpace javaGraphicalUserInterfaceInstance = new TestingSpace();
+	private static CarSimulationManager carSimulationManager;
 
 	@Override
 	public void start(Stage primaryStage) {
 		try {
 
 			root = new Pane();
-			root.getChildren().add(autopilot.getRoad().getCollisionShapeRoad());
+			root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
 
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
@@ -29,72 +28,16 @@ public class TestingSpace extends Application implements Runnable {
 		}
 	}
 
-	/**
-	 * @return the root
-	 */
-	public Pane getRoot() {
-		return root;
-	}
-
-	/**
-	 * @return the scene
-	 */
-	public Scene getScene() {
-		return scene;
-	}
-
-	/**
-	 * @param root the root to set
-	 */
-	public void setRoot(Pane root) {
-		this.root = root;
-	}
-
-	/**
-	 * @param scene the scene to set
-	 */
-	public void setScene(Scene scene) {
-		this.scene = scene;
-	}
-
-	public static void setAutopilot(Autopilot autopilot) {
-		TestingSpace.autopilot = autopilot;
-	}
-
-	/**
-	 * @return the autopilot
-	 */
-	public static Autopilot getAutopilot() {
-		return autopilot;
-	}
-
-	/**
-	 * @return the javaGraphicalUserInterfaceInstance
-	 */
-	public static TestingSpace getJavaGraphicalUserInterfaceInstance() {
-		return javaGraphicalUserInterfaceInstance;
-	}
-
-	/**
-	 * @param javaGraphicalUserInterfaceInstance the
-	 *                                           javaGraphicalUserInterfaceInstance
-	 *                                           to set
-	 */
-	public static void setJavaGraphicalUserInterfaceInstance(TestingSpace javaGraphicalUserInterfaceInstance) {
-		TestingSpace.javaGraphicalUserInterfaceInstance = javaGraphicalUserInterfaceInstance;
-	}
-
-	public static void main(String[] args) {
-		launch(args);
-	}
-
-	/**
-	 * Update the pane, 20 fps (50 ms)
-	 */
+//	public static void main(String[] args) {
+//		launch(args);
+//	}
+//
+//	/**
+//	 * Update the pane, 20 fps (50 ms)
+//	 */
+//	@Override
 	@Override
 	public void run() {
-
-		int count = 1;
 
 		// Sleep until the root is ready
 		while (root == null) {
@@ -106,17 +49,17 @@ public class TestingSpace extends Application implements Runnable {
 			}
 		}
 
-		while (autopilot.getIsSimulationRunning()) {
-			try {
-				// TODO only change if changes are made in objects on panel
-				System.out.println("Updated frame: " + ++count);
-				autopilot.updatePane(root);
-				Thread.sleep(1000);
-			} catch (InterruptedException ie) {
-				System.out.println("Interrupted Exception in TestingSpace.java, run() method. Stack Trace below");
-				ie.printStackTrace();
-			}
-		}
+//		while (autopilot.getIsSimulationRunning()) {
+//			try {
+//				// TODO only change if changes are made in objects on panel
+//				System.out.println("Updated frame: " + ++count);
+//				autopilot.updatePane(root);
+//				Thread.sleep(1000);
+//			} catch (InterruptedException ie) {
+//				System.out.println("Interrupted Exception in TestingSpace.java, run() method. Stack Trace below");
+//				ie.printStackTrace();
+//			}
+//		}
 
 	}
 }

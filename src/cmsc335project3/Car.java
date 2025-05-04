@@ -23,7 +23,6 @@ public class Car {
 	private Polygon collisionShapeCar;
 	private Color colorCar;
 	private Velocity velocityCar;
-	private final boolean isOnScreen = true;
 
 	/**
 	 * Car constructor

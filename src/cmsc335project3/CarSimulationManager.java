@@ -11,7 +11,7 @@ import javafx.scene.paint.Color;
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
  * Project 3
- * Explosion.java
+ * CarSimulationManager.java
  * Isaac Finehout
  * 23 April 2025
  *
@@ -20,14 +20,14 @@ import javafx.scene.paint.Color;
  *
  */
 
-public class Autopilot {
+public class CarSimulationManager {
 
 	// Concurrency items
-	private final ReentrantLock autopilotLock = new ReentrantLock();
-	private final Condition carOnScreen = autopilotLock.newCondition();
-	private final Condition needCar = autopilotLock.newCondition();
-	private final Condition needEmptyCarSpace = autopilotLock.newCondition();
-	private final boolean isSimulationRunning = true;
+	private final ReentrantLock carSimulationManagerLock = new ReentrantLock();
+//	private final Condition carOnScreen = carSimulationManagerLock.newCondition(); TODO delete?
+	private final Condition needCar = carSimulationManagerLock.newCondition();
+	private final Condition needEmptyCarSpace = carSimulationManagerLock.newCondition();
+//	private final boolean isSimulationRunning = true;  TODO delete?
 
 	// TODO change to better data structure
 	private final ArrayList<Car> cars = new ArrayList<Car>();
@@ -38,7 +38,7 @@ public class Autopilot {
 	/**
 	 * Constructor for autopilot
 	 */
-	public Autopilot() {
+	public CarSimulationManager() {
 		// TODO randomize cars made each time
 		cars.add(startCarInd0());
 		cars.add(startCarInd1());
@@ -49,7 +49,7 @@ public class Autopilot {
 	public void putCarInSimulationFullSpeed(Car car) {
 
 		try {
-			autopilotLock.lock();
+			carSimulationManagerLock.lock();
 			while (numberOfItems >= cars.size()) {
 				needEmptyCarSpace.await();
 			}
@@ -61,26 +61,27 @@ public class Autopilot {
 //			lastItem = (++lastItem % cars.size());
 //			numberOfItems++;
 
-			if (autopilotLock.hasWaiters(needCar)) {
+			if (carSimulationManagerLock.hasWaiters(needCar)) {
 				needCar.signal();
 			}
 
 		} catch (InterruptedException ie) {
 			System.out.println(
-					"Interrupted Exception in Autopilot.java, putCarInSimulationFullSpeed(Car car) method. Stack Trace below");
+					"Interrupted Exception in CarSimulationManager.java, putCarInSimulationFullSpeed(Car car) method. Stack Trace below");
 			ie.printStackTrace();
 		}
 
 	}
 
 	public void takeCarFromSimulationAndDelete() {
-
+		// TODO delete just to remove lastItem warning
+		System.out.println(lastItem);
 	}
 
 	public void updatePane(Pane root) {
 
 		try {
-			autopilotLock.lock();
+			carSimulationManagerLock.lock();
 //			while (numberOfItems >= cars.size()) {
 //				needEmptyCarSpace.await();
 //			} TODO while method to check for race condition? or does TestingSpace.run cover it?
@@ -89,59 +90,24 @@ public class Autopilot {
 			root.getChildren().addAll(road.getCollisionShapeRoad(), cars.get(0).getCollisionShapeCar());
 			// TODO test for changes in objects and don;'t update if no changes
 
-//			if (autopilotLock.hasWaiters(needCar)) {
+//			if (carSimulationManagerLock.hasWaiters(needCar)) {
 //				needCar.signal();
 //			}
 
 		} catch (Exception e) { // TODO see if InterruptedException specific?
-			System.out.println("Exception in Autopilot.java, updatePane() method. Stack Trace below");
+			System.out.println("Exception in CarSimulationManager.java, updatePane() method. Stack Trace below");
 			e.printStackTrace();
 		} finally {
-			autopilotLock.unlock();
+			carSimulationManagerLock.unlock();
 		}
 
 	}
 
-	public static void main(String[] args) {
-
-		Autopilot autopilot = new Autopilot();
-		TestingSpace.setAutopilot(autopilot);
-
-		TestingSpace testingSpace = new TestingSpace();
-		(new Thread(testingSpace)).start();
-
-		TestingSpace.getJavaGraphicalUserInterfaceInstance().launch(TestingSpace.class, args);
-
-//		CarProducer carProducer = new CarProducer(autopilot);
-//		(new Thread(carProducer)).start();
-	}
-
 	/**
-	 * @return the autopilotLock
+	 * @return the carSimulationManagerLock
 	 */
-	public ReentrantLock getAutopilotLock() {
-		return autopilotLock;
-	}
-
-	/**
-	 * @return the carOnScreen
-	 */
-	public Condition getCarOnScreen() {
-		return carOnScreen;
-	}
-
-	/**
-	 * @return the needCar
-	 */
-	public Condition getNeedCar() {
-		return needCar;
-	}
-
-	/**
-	 * @return the needEmptyCarSpace
-	 */
-	public Condition getNeedEmptyCarSpace() {
-		return needEmptyCarSpace;
+	public ReentrantLock getcarSimulationManagerLock() {
+		return carSimulationManagerLock;
 	}
 
 	/**
@@ -156,27 +122,6 @@ public class Autopilot {
 	 */
 	public Road getRoad() {
 		return road;
-	}
-
-	/**
-	 * @return the lastItem
-	 */
-	public int getLastItem() {
-		return lastItem;
-	}
-
-	/**
-	 * @return the numberOfItems
-	 */
-	public int getNumberOfItems() {
-		return numberOfItems;
-	}
-
-	/**
-	 * @return the simulationIsRunning
-	 */
-	public boolean getIsSimulationRunning() {
-		return isSimulationRunning;
 	}
 
 	private static Car startCarInd0() {
@@ -198,7 +143,7 @@ public class Autopilot {
 //public static void updateRoot() {
 //
 //	try {
-//		autopilotLock.lock();
+//		carSimulationManagerLock.lock();
 //		cars = TestingSpace.getCars();
 //
 //		Thread.sleep(2000);
@@ -208,7 +153,7 @@ public class Autopilot {
 //
 //	} catch (InterruptedException ie) {
 //	} finally {
-//		autopilotLock.unlock();
+//		carSimulationManagerLock.unlock();
 //	}
 //
 //}
