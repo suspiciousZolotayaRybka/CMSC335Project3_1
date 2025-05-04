@@ -14,13 +14,19 @@ package cmsc335project3;
 
 public enum Velocity {
 
-	WEST_SLOW(5, Direction.WEST), WEST_MID(10, Direction.WEST), WEST_FAST(15, Direction.WEST),
-	EAST_SLOW(5, Direction.EAST), EAST_MID(10, Direction.EAST), EAST_FAST(15, Direction.EAST);
+	//@formatter:off
+	WEST_FIVE_MPH(Speed.FIVE_MILES_PER_HOUR, Direction.WEST),
+	WEST_TEN_MPH(Speed.TEN_MILES_PER_HOUR, Direction.WEST),
+	WEST_FIFTEEN_MPH(Speed.FIFTEEN_MILES_PER_HOUR, Direction.WEST),
+	EAST_FIVE_MPH(Speed.FIVE_MILES_PER_HOUR, Direction.EAST),
+	EAST_TEN_MPH(Speed.TEN_MILES_PER_HOUR, Direction.EAST),
+	EAST_FIFTEEN_MPH(Speed.FIFTEEN_MILES_PER_HOUR, Direction.EAST);
+	//@formatter:on
 
-	private final double speed;
+	private final Speed speed;
 	private final Direction direction;
 
-	Velocity(double speed, Direction direction) {
+	Velocity(Speed speed, Direction direction) {
 		this.speed = speed;
 		this.direction = direction;
 	}
@@ -28,7 +34,7 @@ public enum Velocity {
 	/**
 	 * @return the speed
 	 */
-	public double getSpeed() {
+	public Speed getSpeed() {
 		return speed;
 	}
 

@@ -25,7 +25,7 @@ public class CarSimulationMain extends Application {
 
 	public CarSimulationMain() {
 		// TODO Before making the manager, add customer requirements
-		carSimulationManager = new CarSimulationManager();
+		carSimulationManager = new CarSimulationManager(new TestingSpace()); // TODO change to this
 	}
 
 	@Override
@@ -33,6 +33,7 @@ public class CarSimulationMain extends Application {
 		try {
 			root = new Pane();
 			root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
+
 //TODO get lights, autopilot, and second window showing stats
 // TODO create producers, consumers, and then use autopilot as the passive to manage threads
 // TODO create initial popup requesting how many cars and which directions, along with seconds between each car entering the screen. Maybe more?
