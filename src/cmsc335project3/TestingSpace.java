@@ -10,6 +10,8 @@ public class TestingSpace extends Application {
 	private Pane root;
 	private Scene scene;
 	private final CarSimulationManager carSimulationManager;
+	private Thread carProducerThread;
+	private Thread carMoverThread;
 
 	public TestingSpace() {
 		carSimulationManager = new CarSimulationManager(this);
@@ -23,8 +25,14 @@ public class TestingSpace extends Application {
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
-			(new Thread(new CarProducer(carSimulationManager))).start();
-			(new Thread(new CarMover(carSimulationManager))).start();
+
+			// Start and name threads TODO delete rename after done debugging?
+			carProducerThread = new Thread(new CarProducer(carSimulationManager));
+			carMoverThread = new Thread(new CarMover(carSimulationManager));
+			carProducerThread.setName("carProducerThread");
+			carMoverThread.setName("carMoverThread");
+			carProducerThread.start();
+			carMoverThread.start();
 			primaryStage.show();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -43,6 +51,13 @@ public class TestingSpace extends Application {
 	 */
 	public void setRoot(Pane root) {
 		this.root = root;
+	}
+
+	/**
+	 * @return the carMoverThread
+	 */
+	public Thread getCarMoverThread() {
+		return carMoverThread;
 	}
 
 	public static void main(String[] args) {

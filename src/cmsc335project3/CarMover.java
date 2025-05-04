@@ -27,9 +27,13 @@ public class CarMover implements Runnable {
 				if ((frameCount % 20) == 0) {
 					frameCount = 0;
 					secondCount++;
-					if (secondCount == 100) {
+					if ((secondCount == 100)) {
 						carSimulationManager.setSimulationRunning(false);
 					}
+				}
+
+				if (carSimulationManager.getCars().size() == 0) {
+					carSimulationManager.setSimulationRunning(false);
 				}
 				frameCount++;
 				// TODO delete block

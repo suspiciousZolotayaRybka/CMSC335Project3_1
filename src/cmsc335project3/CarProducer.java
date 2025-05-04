@@ -34,18 +34,12 @@ public class CarProducer implements Runnable {
 	@Override
 	public void run() {
 		try {
-			for (Car car : carSimulationManager.getCars()) {
-				System.out.println("CarProducerRunMethod:Car placed in sim at: " + car.getPositionCar().toString());// TODO//
-																													// delete
-				carSimulationManager.putCarInSimulation(car);
-				Thread.sleep(1000);
-			}
-		} catch (InterruptedException ie) {
-			System.out.println("Interrupted Exception in CarProducer.java, run() method. Stack Trace below");
-			ie.printStackTrace();
+			carSimulationManager.putCarsInSimulation();
+		} finally {
+			carSimulationManager.setIsProducerProducing(false);
+			// TODO delete print statements
+			System.out.println("Producer Finished");
 		}
-		// TODO delete
-		System.out.println("Producer Finished");
 	}
 
 	/**

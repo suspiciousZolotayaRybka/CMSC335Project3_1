@@ -10,6 +10,9 @@ package cmsc335project3;
  * This is the class that creates runnable cars Project 3
  * @author fineh
  *
+ *	Car's X polygon is 75 pixels in length. When an object reaches this length horizontally, they intersect.
+ *  Head on is 157 -> The measurement is in the back left of the car: Note, verify this
+ *
  */
 
 import javafx.geometry.Point2D;
@@ -24,6 +27,8 @@ public class Car {
 	private Color colorCar;
 	private Velocity velocityCar;
 	private boolean isInitializedOnScreen = false;
+	private final int carID;
+	private static int carIDCount = 0;
 
 	/**
 	 * Car constructor
@@ -38,6 +43,7 @@ public class Car {
 		this.positionCar = positionCar;
 		this.colorCar = colorCar;
 		this.velocityCar = velocityCar;
+		carID = carIDCount++;
 		updateCollisionShapeCar();
 	}
 
@@ -180,6 +186,26 @@ public class Car {
 	 */
 	public void setIsInitializedOnScreen(boolean isInitializedOnScreen) {
 		this.isInitializedOnScreen = isInitializedOnScreen;
+	}
+
+	/**
+	 *
+	 * This method checks if a car collides with another car and returns a boolean
+	 * value based on this condition
+	 *
+	 * @param car_j
+	 * @return
+	 */
+	public boolean collidesWith(Car car_j) {
+		return false;
+	}
+
+	/**
+	 * Car String used for testing purposes
+	 */
+	@Override
+	public String toString() {
+		return String.format("Car#%d:position=%s,color=%s", carID, positionCar.toString(), colorCar.toString());
 	}
 
 }
