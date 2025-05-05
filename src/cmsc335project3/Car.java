@@ -18,6 +18,7 @@ package cmsc335project3;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Shape;
 
 public class Car {
 
@@ -27,6 +28,7 @@ public class Car {
 	private Color colorCar;
 	private Velocity velocityCar;
 	private boolean isInitializedOnScreen = false;
+	private final CarSimulationManager carSimulationManager;
 	private final int carID;
 	private static int carIDCount = 0;
 
@@ -39,10 +41,11 @@ public class Car {
 	 * @param speedMilesPerHourCar speed car is travelling
 	 * @param directionCar         direction (north or south) car is travelling
 	 */
-	public Car(Point2D positionCar, Color colorCar, Velocity velocityCar) {
+	public Car(Point2D positionCar, Color colorCar, Velocity velocityCar, CarSimulationManager carSimulationManager) {
 		this.positionCar = positionCar;
 		this.colorCar = colorCar;
 		this.velocityCar = velocityCar;
+		this.carSimulationManager = carSimulationManager;
 		carID = carIDCount++;
 		updateCollisionShapeCar();
 	}
@@ -189,6 +192,13 @@ public class Car {
 	}
 
 	/**
+	 * @return the carID
+	 */
+	public int getCarID() {
+		return carID;
+	}
+
+	/**
 	 *
 	 * This method checks if a car collides with another car and returns a boolean
 	 * value based on this condition
@@ -197,7 +207,26 @@ public class Car {
 	 * @return
 	 */
 	public boolean collidesWith(Car car_j) {
-		return false;
+		boolean collidesWithOtherCar = false;
+
+		if (this == car_j) {
+			// Do nothing. it is the same car
+			collidesWithOtherCar = false;
+		} else if (this.getIsInitializedOnScreen() || carSimulationManager.isProducerProducing()) {
+			// Check for collisions, the car is initialized on the screen
+
+			// Also check for collisions if the producer is producing
+			// The car will not be initialized on the screen in this case
+
+			Shape intersection = Shape.intersect(collisionShapeCar, car_j.getCollisionShapeCar());
+			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
+				System.out.println("BOOM");
+				// If the two cars collide, return true
+				collidesWithOtherCar = true;
+			}
+		}
+
+		return collidesWithOtherCar;
 	}
 
 	/**

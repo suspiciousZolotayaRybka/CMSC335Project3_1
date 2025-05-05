@@ -1,6 +1,7 @@
 package cmsc335project3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -8,7 +9,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Shape;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
@@ -46,8 +46,8 @@ public class CarSimulationManager {
 		this.testingSpace = testingSpace;
 
 		// TODO make simulation according to customer requirements
-//		cars = this.createRandomizedCars();
-		cars = this.createTestingCars();
+		cars = this.createRandomizedCars();
+//		cars = createTestingCars();
 		numberOfCarsVisibleOnScreen = 0;
 	}
 
@@ -97,9 +97,13 @@ public class CarSimulationManager {
 					});
 				}
 			}
-
-			checkForCollisions(car);
-
+			// Check for and remove car collisions
+			try {
+				carSimulationManagerLock.lock();
+				removeCollidingCars(findCollidingCars());
+			} finally {
+				carSimulationManagerLock.unlock();
+			}
 			// TODO delete
 			System.out.printf("cars.size()=%d%n,numberOfCarsVisibleOnScreen=%d%n", cars.size(),
 					numberOfCarsVisibleOnScreen);
@@ -117,58 +121,6 @@ public class CarSimulationManager {
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
-	}
-
-	public void checkForCollisions(Car car) {
-
-		// Check for collisions with other cars, and make them explode
-		ArrayList<Car> carCollisions = new ArrayList<Car>();
-
-		Platform.runLater(() -> {
-
-			try {
-				carSimulationManagerLock.lock();
-
-				for (Car car_j : cars) {
-					if ((car != car_j) && (car.getIsInitializedOnScreen())) {
-						Shape intersection = Shape.intersect(car.getCollisionShapeCar(), car_j.getCollisionShapeCar());
-						if ((intersection.getBoundsInLocal().getWidth() > 0)
-								&& (intersection.getBoundsInLocal().getHeight() > 0)) {
-							System.out.println("BOOM");
-							carCollisions.add(car);
-							carCollisions.add(car_j);
-							double carX = car.getPositionCar().getX();
-							double car_jX = car_j.getPositionCar().getX();
-							System.out.printf("X car 0:%f%nX car 1:%f%nDifference%f%n%n", carX, car_jX, car_jX - carX);
-						}
-					}
-				}
-
-				// Remove cars outside loop
-				// TODO use a better algorithm than a nested for loop for time complexity
-				if (!(carCollisions.isEmpty())) {
-					System.out.println("BOOMNOT EMPTY");
-					for (int i = 0; i < carCollisions.size(); i++) {
-						testingSpace.getRoot().getChildren().remove(carCollisions.get(i).getCollisionShapeCar());
-						carCollisions.get(i).setIsInitializedOnScreen(false);
-						numberOfCarsVisibleOnScreen--;
-						// TODO if numberOfCarsVisibleOnScreen reaches 0, end the simulation
-						// TODO find a better place to do this?
-						if (numberOfCarsVisibleOnScreen == 0) {
-							isSimulationRunning = false;
-						}
-						System.out.println("numberOfCarsVisibleOnScreen=" + numberOfCarsVisibleOnScreen);
-
-					}
-				}
-
-			} finally {
-				// Unlock after the GUI update
-				carSimulationManagerLock.unlock();
-			}
-
-		});
-
 	}
 
 	/**
@@ -196,22 +148,112 @@ public class CarSimulationManager {
 						numberOfCarsVisibleOnScreen++;
 					}
 				} finally {
+					// Check for car collisions and remove any right away
+					removeCollidingCars(findCollidingCars());
 					carSimulationManagerLock.unlock();
 				}
 			});
 
+//			// TODO uncomment once collisions is finished
 			// Only signal the mover to start once the producer has finished
-			if (carSimulationManagerLock.hasWaiters(needAllCarsProduced)
-					&& (numberOfCarsVisibleOnScreen == cars.size())) {
+			if (carSimulationManagerLock.hasWaiters(needAllCarsProduced) && (numberOfCarsVisibleOnScreen != 0)) {
 				needAllCarsProduced.signal();
 			}
-		} catch (InterruptedException ie) {
+		} catch (
+
+		InterruptedException ie) {
 			System.out.println(
 					"Interrupted Exception in CarSimulationManager.java, putCarInSimulationFullSpeed(Car car) method. Stack Trace below");
 			ie.printStackTrace();
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
+
+	}
+
+	/**
+	 *
+	 * @param the collidingCars to be removed from the GUI
+	 */
+	public synchronized void removeCollidingCars(HashSet<Car> collidingCars) {
+
+		if (!collidingCars.isEmpty()) {
+			// If there are car collisions, remove the cars
+			Platform.runLater(() -> {
+				try {
+					carSimulationManagerLock.lock();
+
+					// TODO debug variable remove
+					int count = 0;
+
+					for (Car car : collidingCars) {
+						count++;
+						testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
+						car.setIsInitializedOnScreen(false);
+						numberOfCarsVisibleOnScreen--;
+
+						// TODO delete comment Check and see if this is the first time running the
+						// collisions method.
+						// If it is, it's from the CarProducer, and the needAllCarsProduced condition
+						// should be false
+//						if
+
+						if (numberOfCarsVisibleOnScreen == 0) {
+							isSimulationRunning = false;
+						}
+					}
+
+				} finally {
+					carSimulationManagerLock.unlock();
+				}
+			});
+		}
+
+	}
+
+	/**
+	 * Check to see if cars have collided and remove those that have
+	 */
+	public synchronized HashSet<Car> findCollidingCars() {
+		// Create the collidingCars set
+		HashSet<Car> collidingCars = new HashSet<>();
+
+		try {
+			carSimulationManagerLock.lock();
+
+			// Check for collisions between unique pairs of cars
+			for (int i = 0; i < cars.size(); i++) {
+				// Get the first car to compare
+				Car car_i = cars.get(i);
+				if (!car_i.getIsInitializedOnScreen()) {
+					// If the car is not initialized on the screen, skip this iteration
+					continue;
+				}
+
+				for (int j = i + 1; j < cars.size(); j++) {
+					// Only compare unique pairs, add 1 to i for starting index
+					Car car_j = cars.get(j);
+					if (!car_j.getIsInitializedOnScreen()) {
+						// If the car is not initialized on the screen, skip this iteration
+						continue;
+					}
+
+					if (car_i.collidesWith(car_j)) {
+						collidingCars.add(car_i);
+						collidingCars.add(car_j);
+
+						// TODO test and see if you can change the above to directly remove the cars
+						// instead
+						// Optional debug TODO delete optional debug.
+						System.out.printf("Collision: car %d with car %d%n", i, j);
+					}
+				}
+			}
+
+		} finally {
+			carSimulationManagerLock.unlock();
+		}
+		return collidingCars;
 
 	}
 
@@ -242,6 +284,13 @@ public class CarSimulationManager {
 	}
 
 	/**
+	 * @return the isProducerProducing
+	 */
+	public boolean isProducerProducing() {
+		return isProducerProducing;
+	}
+
+	/**
 	 * @param isSimulationRunning the isSimulationRunning to set
 	 */
 	public void setSimulationRunning(boolean isSimulationRunning) {
@@ -262,18 +311,16 @@ public class CarSimulationManager {
 	 */
 	private ArrayList<Car> createRandomizedCars() {
 
+		ArrayList<Car> randomizedCars = new ArrayList<Car>();
+
 		try {
 			carSimulationManagerLock.lock();
-
 			Random random = new Random();
-			ArrayList<Car> cars = new ArrayList<Car>();
 			Velocity velocity = null;
 			Direction direction = null;
-			Speed speed = null;
 			Point2D point2D = null;
 			Color color = null;
-			Car car = null;
-			int numCars = random.nextInt(3, 8);
+			int numCars = random.nextInt(20, 25);
 
 			for (int i = 0; i < numCars; i++) {
 
@@ -294,40 +341,49 @@ public class CarSimulationManager {
 
 				color = new Color(random.nextDouble(1.0), random.nextDouble(1.0), random.nextDouble(1.0), 1.0);
 
-				cars.add(new Car(point2D, color, velocity));
+				randomizedCars.add(new Car(point2D, color, velocity, this));
 			}
 
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
 
-		return cars;
+		return randomizedCars;
 	}
 
 	private ArrayList<Car> createTestingCars() {
 		ArrayList<Car> cars = new ArrayList<Car>();
-
-//		Car 0 Position:Point2D [x = 211.33583159925303, y = 160.0]
-//				Car 1 Position:Point2D [x = 328.40155368399815, y = 120.0]
-//				Car 2 Position:Point2D [x = 376.6097020710003, y = 160.0]
-//				Car 3 Position:Point2D [x = 876.2311643425588, y = 120.0]
-//				Car 4 Position:Point2D [x = 756.1500180015739, y = 160.0]
-//				Car 5 Position:Point2D [x = 356.2754489258392, y = 120.0]
-//				Car 6 Position:Point2D [x = 779.088915537401, y = 160.0]
-
-		cars.add(new Car(new Point2D(211.33583159925303, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(328.40155368399815, 120), Color.RED, Velocity.WEST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(376.6097020710003, 160), Color.YELLOW, Velocity.EAST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(876.2311643425588, 120), Color.PINK, Velocity.WEST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(756.1500180015739, 160), Color.BLUE, Velocity.EAST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(356.2754489258392, 120), Color.PURPLE, Velocity.WEST_FIFTEEN_MPH));
-		cars.add(new Car(new Point2D(779.088915537401, 160), Color.ORANGE, Velocity.EAST_FIFTEEN_MPH));
-
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH));
-//		cars.add(new Car(new Point2D(185, 160), Color.BLACK, Velocity.EAST_FIVE_MPH));
 //
-//		cars.add(new Car(new Point2D(900, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH));
-//		cars.add(new Car(new Point2D(775, 120), Color.BLACK, Velocity.WEST_FIVE_MPH));
+//		cars.add(new Car(new Point2D(211.33583159925303, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(328.40155368399815, 120), Color.RED, Velocity.WEST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(376.6097020710003, 160), Color.YELLOW, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(876.2311643425588, 120), Color.PINK, Velocity.WEST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(756.1500180015739, 160), Color.BLUE, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(356.2754489258392, 120), Color.PURPLE, Velocity.WEST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(779.088915537401, 160), Color.ORANGE, Velocity.EAST_FIFTEEN_MPH, this));
+
+		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+		cars.add(new Car(new Point2D(120, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+		cars.add(new Car(new Point2D(220, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+		cars.add(new Car(new Point2D(240, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+
+		cars.add(new Car(new Point2D(100, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+		cars.add(new Car(new Point2D(80, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+		cars.add(new Car(new Point2D(60, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(220, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(240, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
+//
+//		cars.add(new Car(new Point2D(900, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(775, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
 
 		return cars;
 	}

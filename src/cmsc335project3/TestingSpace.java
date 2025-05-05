@@ -25,6 +25,7 @@ public class TestingSpace extends Application {
 			scene = new Scene(root, 1000, 400);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
+			primaryStage.show();
 
 			// Start and name threads TODO delete rename after done debugging?
 			carProducerThread = new Thread(new CarProducer(carSimulationManager));
@@ -33,7 +34,6 @@ public class TestingSpace extends Application {
 			carMoverThread.setName("carMoverThread");
 			carProducerThread.start();
 			carMoverThread.start();
-			primaryStage.show();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
