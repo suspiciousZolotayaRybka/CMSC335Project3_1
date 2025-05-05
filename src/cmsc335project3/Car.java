@@ -170,29 +170,29 @@ public class Car {
 
 	/**
 	 *
-	 * This method checks if a car's collision radius intersects with another car's
+	 * This method checks if a car's collision radius intersects with another
 	 * collision radius and returns a boolean value based on this condition
 	 *
 	 * @param collisionRadiusCar
 	 */
-	public boolean isWithinCollisionRadiusCar(Rectangle collisionRadiusCar) {
-		boolean isWithinCollisionRadiusCar = false;
+	public boolean isWithinCollisionRadius(Rectangle collisionRadius) {
+		boolean isWithinCollisionRadius = false;
 
-		if (this.collisionRadiusCar == collisionRadiusCar) {
+		if (collisionRadiusCar == collisionRadius) {
 			// Do nothing. it is the same car's collision radius
-			isWithinCollisionRadiusCar = false;
+			isWithinCollisionRadius = false;
 		} else if (this.getIsInitializedOnScreen()) {
 			// Ensure the car is on the screen
 			// Create and test the intersection
-			Shape intersection = Shape.intersect(this.collisionRadiusCar, collisionRadiusCar);
+			Shape intersection = Shape.intersect(collisionRadiusCar, collisionRadius);
 			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
 				System.out.println("CollisionRadiusCarDetected"); // TODO delete
 				// If the two cars collide, return true
-				isWithinCollisionRadiusCar = true;
+				isWithinCollisionRadius = true;
 			}
 		}
 
-		return isWithinCollisionRadiusCar;
+		return isWithinCollisionRadius;
 	}
 
 	/**

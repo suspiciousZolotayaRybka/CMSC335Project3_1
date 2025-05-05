@@ -15,9 +15,11 @@ package cmsc335project3;
 public enum Velocity {
 
 	//@formatter:off
+	WEST_ZERO_MPH(Speed.ZERO_MILES_PER_HOUR, Direction.WEST),
 	WEST_FIVE_MPH(Speed.FIVE_MILES_PER_HOUR, Direction.WEST),
 	WEST_TEN_MPH(Speed.TEN_MILES_PER_HOUR, Direction.WEST),
 	WEST_FIFTEEN_MPH(Speed.FIFTEEN_MILES_PER_HOUR, Direction.WEST),
+	EAST_ZERO_MPH(Speed.ZERO_MILES_PER_HOUR, Direction.EAST),
 	EAST_FIVE_MPH(Speed.FIVE_MILES_PER_HOUR, Direction.EAST),
 	EAST_TEN_MPH(Speed.TEN_MILES_PER_HOUR, Direction.EAST),
 	EAST_FIFTEEN_MPH(Speed.FIFTEEN_MILES_PER_HOUR, Direction.EAST);

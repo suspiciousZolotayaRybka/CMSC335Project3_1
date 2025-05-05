@@ -117,7 +117,7 @@ public class CarSimulationManager {
 					if (car_i.getVelocityCar().getDirection() == Direction.EAST) {
 						// If the car is eastbound, check to see if a car is in front of its collision
 						// radius
-						if (car_i.isWithinCollisionRadiusCar(collisionRadius_j)) {
+						if (car_i.isWithinCollisionRadius(collisionRadius_j)) {
 							// Only slow the car down if it is behind another car
 							// If the cars are moving east, this means the differences of x will be negative
 							if (((collisionRadius_i.getX()) - (collisionRadius_j.getX())) < 0) {
@@ -129,7 +129,7 @@ public class CarSimulationManager {
 					} else {
 						// if the car is going westbound, check to see if a car is west in front of its
 						// collision radius
-						if (car_i.isWithinCollisionRadiusCar(collisionRadius_j)) {
+						if (car_i.isWithinCollisionRadius(collisionRadius_j)) {
 							// Only slow the car down if it is behind another car
 							// If the cars are moving west, this means the differences of x will be positive
 							if (((collisionRadius_i.getX()) - (collisionRadius_j.getX())) > 0) {
@@ -205,8 +205,9 @@ public class CarSimulationManager {
 			// Slow cars moving faster behind others
 			try {
 				carSimulationManagerLock.lock();
-				findCollisionRadiusCarsAndSlowCarsBehindOthers();
-//				removeCollidingCars(findCollidingCars());
+				findCollisionRadiusCarsAndSlowCarsBehindOthers(); // TODO stop if car in front is stopped
+				removeCollidingCars(findCollidingCars());
+				findCollisionRadiusTrafficLightAndStop(); // TODO change based on colors
 			} finally {
 				carSimulationManagerLock.unlock();
 			}
@@ -289,6 +290,24 @@ public class CarSimulationManager {
 	}
 
 	/**
+	 * TODO change method so cars stop for yellow and red only
+	 */
+	public void findCollisionRadiusTrafficLightAndStop() {
+		HashSet<Car> carsAtStreetLights = new HashSet<>();
+
+		for (Car car : cars) {
+			for (TrafficLight trafficLight : trafficLights) {
+				if (car.isWithinCollisionRadius(trafficLight.getCollisionRadiusTrafficLight())) {
+					car.setVelocityCar(Velocity.from(Speed.ZERO_MILES_PER_HOUR, car.getVelocityCar().getDirection()));
+					// Skip over next iterations, car is already at a traffic light
+					continue;
+				}
+			}
+		}
+
+	}
+
+	/**
 	 *
 	 * @param the collidingCars to be removed from the GUI
 	 */
@@ -333,6 +352,30 @@ public class CarSimulationManager {
 				new TrafficLight(new Point2D(490, 35), this, 10, 2, 12),
 				new TrafficLight(new Point2D(770, 35), this, 10, 2, 12) };
 		return trafficLights;
+	}
+
+	/**
+	 *
+	 * @param trafficLight the traffic light to update
+	 */
+	public void updateTrafficLight(TrafficLight trafficLight) {
+		try {
+			carSimulationManagerLock.lock();
+			// Find the traffic light color to switch to
+			switch (trafficLight.getTlc()) {
+			case GREEN -> trafficLight.setColorTrafficLight(Color.YELLOW);
+			case YELLOW -> trafficLight.setColorTrafficLight(Color.RED);
+			case RED -> trafficLight.setColorTrafficLight(Color.GREEN);
+			}
+			Platform.runLater(() -> {
+				// Update the traffic light color
+				testingSpace.getRoot().getChildren().remove(trafficLight.getIndicatorTrafficLight());
+				testingSpace.getRoot().getChildren().add(trafficLight.getIndicatorTrafficLight());
+			});
+
+		} finally {
+			carSimulationManagerLock.unlock();
+		}
 	}
 
 	/**
@@ -487,8 +530,8 @@ public class CarSimulationManager {
 	}
 
 	private TrafficLight[] createTestingTrafficLights() {
-		TrafficLight[] trafficLights = new TrafficLight[] { new TrafficLight(new Point2D(220, 35), this, 1, 1, 1),
-				new TrafficLight(new Point2D(490, 35), this, 1, 1, 1),
+		TrafficLight[] trafficLights = new TrafficLight[] { new TrafficLight(new Point2D(220, 35), this, 3, 1, 1),
+				new TrafficLight(new Point2D(490, 35), this, 2, 1, 1),
 				new TrafficLight(new Point2D(770, 35), this, 1, 1, 1) };
 		return trafficLights;
 	}

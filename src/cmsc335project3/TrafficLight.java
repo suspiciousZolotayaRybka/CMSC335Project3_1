@@ -17,23 +17,17 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
-//An enumeration of the colors of a traffic light.
-enum TrafficLightColor {
-	RED, GREEN, YELLOW
-}
-
 public class TrafficLight implements Runnable {
 
 	// Declare variables
 	private final Point2D positionTrafficLight;
 	private Circle indicatorTrafficLight;
 	private Rectangle collisionRadiusTrafficLight;
-	private final Color colorTrafficLight = Color.GREEN;
-	private final TrafficLightColor tlc = TrafficLightColor.GREEN;
+	private Color colorTrafficLight = Color.GREEN;
+	private TrafficLightColor tlc = TrafficLightColor.GREEN;
 	private final int greenTimer;
 	private final int yellowTimer;
 	private final int redTimer;
-	private final boolean isInitializedOnScreen = false;
 	private final CarSimulationManager carSimulationManager;
 
 	/**
@@ -61,6 +55,7 @@ public class TrafficLight implements Runnable {
 				case YELLOW -> Thread.sleep(yellowTimer * 1000);
 				case RED -> Thread.sleep(redTimer * 1000);
 				}
+				carSimulationManager.updateTrafficLight(this);
 			} catch (InterruptedException ie) {
 				System.out.println("Interrupted Exception in TrafficLight.java, run() method. Stack Trace below");
 				ie.printStackTrace();
@@ -104,6 +99,35 @@ public class TrafficLight implements Runnable {
 	 */
 	public Circle getIndicatorTrafficLight() {
 		return indicatorTrafficLight;
+	}
+
+	/**
+	 * @return the colorTrafficLight
+	 */
+	public Color getColorTrafficLight() {
+		return colorTrafficLight;
+	}
+
+	/**
+	 * @param colorTrafficLight the colorTrafficLight to set
+	 */
+	public void setColorTrafficLight(Color colorTrafficLight) {
+		this.colorTrafficLight = colorTrafficLight;
+		if (colorTrafficLight == Color.GREEN) {
+			tlc = TrafficLightColor.GREEN;
+		} else if (colorTrafficLight == Color.RED) {
+			tlc = TrafficLightColor.RED;
+		} else if (colorTrafficLight == Color.YELLOW) {
+			tlc = TrafficLightColor.YELLOW;
+		}
+		indicatorTrafficLight.setFill(this.colorTrafficLight);
+	}
+
+	/**
+	 * @return the tlc
+	 */
+	public TrafficLightColor getTlc() {
+		return tlc;
 	}
 
 }
