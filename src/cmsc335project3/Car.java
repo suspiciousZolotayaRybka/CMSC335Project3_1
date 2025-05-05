@@ -18,6 +18,7 @@ package cmsc335project3;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 
 public class Car {
@@ -25,12 +26,16 @@ public class Car {
 	// Declare variables
 	private Point2D positionCar;
 	private Polygon collisionShapeCar;
+	private Rectangle collisionRadius;
 	private Color colorCar;
 	private Velocity velocityCar;
+	private final Speed preferredSpeed;
 	private boolean isInitializedOnScreen = false;
 	private final CarSimulationManager carSimulationManager;
 	private final int carID;
 	private static int carIDCount = 0;
+	private static final int carWidth = 80;
+	private static final int carHeight = 25;
 
 	/**
 	 * Car constructor
@@ -45,9 +50,11 @@ public class Car {
 		this.positionCar = positionCar;
 		this.colorCar = colorCar;
 		this.velocityCar = velocityCar;
+		preferredSpeed = velocityCar.getSpeed();
 		this.carSimulationManager = carSimulationManager;
 		carID = carIDCount++;
 		updateCollisionShapeCar();
+		updateCollisionRadiuses();
 	}
 
 	/**
@@ -120,6 +127,87 @@ public class Car {
 	}
 
 	/**
+	 * Update the collisionRadiuses of the car
+	 */
+	public void updateCollisionRadiuses() {
+		// Create the car's collision radiuses
+		final double xPadding = 15;
+		final double yPadding = 5;
+		collisionRadius = new Rectangle(positionCar.getX() - xPadding, positionCar.getY() - yPadding,
+				carWidth + (2 * xPadding), carHeight + (2 * yPadding));
+
+		collisionRadius.setFill(colorCar); // TODO delete
+
+	}
+
+	/**
+	 *
+	 * This method checks if a car collides with another car and returns a boolean
+	 * value based on this condition
+	 *
+	 * @param car_j
+	 * @return
+	 */
+	public boolean collidesWith(Car car_j) {
+		boolean collidesWithOtherCar = false;
+
+		if (this == car_j) {
+			// Do nothing. it is the same car
+			collidesWithOtherCar = false;
+		} else if (this.getIsInitializedOnScreen() || carSimulationManager.isProducerProducing()) {
+			// Check for collisions, the car is initialized on the screen
+
+			// Also check for collisions if the producer is producing
+			// The car will not be initialized on the screen in this case
+
+			Shape intersection = Shape.intersect(collisionShapeCar, car_j.getCollisionShapeCar());
+			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
+				System.out.println("BOOM"); // TODO delete
+				// If the two cars collide, return true
+				collidesWithOtherCar = true;
+			}
+		}
+
+		return collidesWithOtherCar;
+	}
+
+	/**
+	 *
+	 * This method checks if a car's collision radius intersects with another car's
+	 * collision radius and returns a boolean value based on this condition
+	 *
+	 * @param collisionRadius
+	 * @return
+	 */
+	public boolean isWithinCollisionRadius(Rectangle collisionRadius) {
+		boolean collidesWithOtherCar = false;
+
+		if (this.collisionRadius == collisionRadius) {
+			// Do nothing. it is the same car's collision radius
+			collidesWithOtherCar = false;
+		} else if (this.getIsInitializedOnScreen()) {
+			// Ensure the car is on the screen
+			// Create and test the intersection
+			Shape intersection = Shape.intersect(this.collisionRadius, collisionRadius);
+			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
+				System.out.println("CollisionRadiusDetected"); // TODO delete
+				// If the two cars collide, return true
+				collidesWithOtherCar = true;
+			}
+		}
+
+		return collidesWithOtherCar;
+	}
+
+	/**
+	 * Car String used for testing purposes
+	 */
+	@Override
+	public String toString() {
+		return String.format("Car#%d:position=%s,color=%s", carID, positionCar.toString(), colorCar.toString());
+	}
+
+	/**
 	 * @return the positionCar
 	 */
 	public Point2D getPositionCar() {
@@ -152,6 +240,21 @@ public class Car {
 	 */
 	public boolean getIsInitializedOnScreen() {
 		return isInitializedOnScreen;
+	}
+
+	/**
+	 * @return the collisionRadius
+	 */
+	public Rectangle getCollisionRadius() {
+		return collisionRadius;
+	}
+
+	/**
+	 *
+	 * @return the preferredSpeed
+	 */
+	public Speed getPreferredSpeed() {
+		return preferredSpeed;
 	}
 
 	/**
@@ -192,49 +295,18 @@ public class Car {
 	}
 
 	/**
+	 *
+	 * @param the velocityCar to set
+	 */
+	public void setVelocityCar(Velocity velocityCar) {
+		this.velocityCar = velocityCar;
+	}
+
+	/**
 	 * @return the carID
 	 */
 	public int getCarID() {
 		return carID;
-	}
-
-	/**
-	 *
-	 * This method checks if a car collides with another car and returns a boolean
-	 * value based on this condition
-	 *
-	 * @param car_j
-	 * @return
-	 */
-	public boolean collidesWith(Car car_j) {
-		boolean collidesWithOtherCar = false;
-
-		if (this == car_j) {
-			// Do nothing. it is the same car
-			collidesWithOtherCar = false;
-		} else if (this.getIsInitializedOnScreen() || carSimulationManager.isProducerProducing()) {
-			// Check for collisions, the car is initialized on the screen
-
-			// Also check for collisions if the producer is producing
-			// The car will not be initialized on the screen in this case
-
-			Shape intersection = Shape.intersect(collisionShapeCar, car_j.getCollisionShapeCar());
-			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
-				System.out.println("BOOM");
-				// If the two cars collide, return true
-				collidesWithOtherCar = true;
-			}
-		}
-
-		return collidesWithOtherCar;
-	}
-
-	/**
-	 * Car String used for testing purposes
-	 */
-	@Override
-	public String toString() {
-		return String.format("Car#%d:position=%s,color=%s", carID, positionCar.toString(), colorCar.toString());
 	}
 
 }

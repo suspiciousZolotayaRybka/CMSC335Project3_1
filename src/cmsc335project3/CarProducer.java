@@ -35,8 +35,9 @@ public class CarProducer implements Runnable {
 	public void run() {
 		try {
 			carSimulationManager.putCarsInSimulation();
-		} finally {
 			carSimulationManager.setIsProducerProducing(false);
+		} finally {
+//			carSimulationManager.setIsProducerProducing(false);
 			// TODO delete print statements
 			System.out.println("Producer Finished");
 		}

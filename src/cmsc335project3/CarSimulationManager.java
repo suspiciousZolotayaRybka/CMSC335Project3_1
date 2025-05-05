@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
@@ -46,8 +47,8 @@ public class CarSimulationManager {
 		this.testingSpace = testingSpace;
 
 		// TODO make simulation according to customer requirements
-		cars = this.createRandomizedCars();
-//		cars = createTestingCars();
+//		cars = this.createRandomizedCars();
+		cars = createTestingCars();
 		numberOfCarsVisibleOnScreen = 0;
 	}
 
@@ -87,9 +88,12 @@ public class CarSimulationManager {
 							// Lock for the GUI update
 							carSimulationManagerLock.lock();
 							// Remove, update, then add the car back
+							testingSpace.getRoot().getChildren().remove(car.getCollisionRadius()); // TODO delete
 							testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
 							car.updateCollisionShapeCar();
+							car.updateCollisionRadiuses();
 							testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+							testingSpace.getRoot().getChildren().add(car.getCollisionRadius()); // TODO delete
 						} finally {
 							// Unlock the thread
 							carSimulationManagerLock.unlock();
@@ -98,9 +102,19 @@ public class CarSimulationManager {
 				}
 			}
 			// Check for and remove car collisions
+			// Slow cars moving faster behind others
 			try {
 				carSimulationManagerLock.lock();
 				removeCollidingCars(findCollidingCars());
+				findCollisionRadiusCarsAndSlowCarsBehindOthers();
+			} finally {
+				carSimulationManagerLock.unlock();
+			}
+
+			// Check for and slow down cars in each others radius
+			try {
+				carSimulationManagerLock.lock();
+//				slowDownCollisionRadiusCars(findCollisionRadiusCars());
 			} finally {
 				carSimulationManagerLock.unlock();
 			}
@@ -142,23 +156,27 @@ public class CarSimulationManager {
 						// TODO delete print statement later
 						System.out.printf("CarSimulatorManagerCriticalSection:%s%n", car.toString());
 						testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+						testingSpace.getRoot().getChildren().add(car.getCollisionRadius()); // TODO delete
 
 						// Allow the moveCar method to move the car once unlocked
 						car.setIsInitializedOnScreen(true);
 						numberOfCarsVisibleOnScreen++;
 					}
+
+					if (carSimulationManagerLock.hasWaiters(needAllCarsProduced)
+							&& (numberOfCarsVisibleOnScreen == cars.size())) {
+						needAllCarsProduced.signal();
+					}
+
 				} finally {
 					// Check for car collisions and remove any right away
-					removeCollidingCars(findCollidingCars());
+					if (!(findCollidingCars().isEmpty())) {
+						throw new IllegalArgumentException(
+								"IllegalArgumentException in CarSimulationManager.java putCarsInSimulation() -> Cannot start from an ArrayList of cars where cars are already overlapping");
+					}
 					carSimulationManagerLock.unlock();
 				}
 			});
-
-//			// TODO uncomment once collisions is finished
-			// Only signal the mover to start once the producer has finished
-			if (carSimulationManagerLock.hasWaiters(needAllCarsProduced) && (numberOfCarsVisibleOnScreen != 0)) {
-				needAllCarsProduced.signal();
-			}
 		} catch (
 
 		InterruptedException ie) {
@@ -183,20 +201,10 @@ public class CarSimulationManager {
 				try {
 					carSimulationManagerLock.lock();
 
-					// TODO debug variable remove
-					int count = 0;
-
 					for (Car car : collidingCars) {
-						count++;
 						testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
 						car.setIsInitializedOnScreen(false);
 						numberOfCarsVisibleOnScreen--;
-
-						// TODO delete comment Check and see if this is the first time running the
-						// collisions method.
-						// If it is, it's from the CarProducer, and the needAllCarsProduced condition
-						// should be false
-//						if
 
 						if (numberOfCarsVisibleOnScreen == 0) {
 							isSimulationRunning = false;
@@ -237,24 +245,72 @@ public class CarSimulationManager {
 						// If the car is not initialized on the screen, skip this iteration
 						continue;
 					}
-
+					// If the cars collide, add it to the set
 					if (car_i.collidesWith(car_j)) {
 						collidingCars.add(car_i);
 						collidingCars.add(car_j);
-
-						// TODO test and see if you can change the above to directly remove the cars
-						// instead
-						// Optional debug TODO delete optional debug.
-						System.out.printf("Collision: car %d with car %d%n", i, j);
 					}
+				}
+			}
+		} finally {
+			carSimulationManagerLock.unlock();
+		}
+		return collidingCars;
+	}
+
+	/**
+	 * Check to see if cars have collided and remove those that have
+	 */
+	public synchronized HashSet<Car> findCollisionRadiusCarsAndSlowCarsBehindOthers() {
+		// Create the collisionRadiusCars set
+		HashSet<Car> collisionRadiusCars = new HashSet<>();
+
+		// TODO make the complement or whatever set that is called and make those cars
+		// move preferredSpeed
+
+		try {
+			carSimulationManagerLock.lock();
+			// Check for cars approaching other cars
+			Car car;
+			boolean isBehindAnotherCarRadius = false;
+			for (int i = 0; i < cars.size(); i++) {
+				car = cars.get(i);
+				Rectangle collisionRadius = car.getCollisionRadius();
+				Rectangle collisionRadius_j = cars.get(i).getCollisionRadius();
+				if (car.getVelocityCar().getDirection() == Direction.EAST) {
+					// If the car is eastbound, check to see if a car is in front of its collision
+					// radius
+					if (car.isWithinCollisionRadius(collisionRadius_j)) {
+						// Only slow the car down if it is behind another car
+						// If the cars are moving east, this means the differences of x will be negative
+						if (((collisionRadius.getX()) - (collisionRadius_j.getX())) < 0) {
+							// slow down the car
+							car.setVelocityCar(Velocity.EAST_FIVE_MPH);
+						}
+					}
+				} else {
+					// if the car is going westbound, check to see if a car is west in front of its
+					// collision radius
+					if (car.isWithinCollisionRadius(collisionRadius_j)) {
+						// Only slow the car down if it is behind another car
+						// If the cars are moving west, this means the differences of x will be positive
+						if (((collisionRadius.getX()) - (collisionRadius_j.getX())) > 0) {
+							// slow down the car
+							car.setVelocityCar(Velocity.EAST_FIVE_MPH);
+						}
+					}
+				}
+
+				if (!isBehindAnotherCarRadius) {
+					Velocity newVelocity = Velocity.from(car.getPreferredSpeed(), car.getVelocityCar().getDirection());
+					car.setVelocityCar(newVelocity);
 				}
 			}
 
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
-		return collidingCars;
-
+		return collisionRadiusCars;
 	}
 
 	public void takeCarFromSimulationAndDelete() {
@@ -316,31 +372,58 @@ public class CarSimulationManager {
 		try {
 			carSimulationManagerLock.lock();
 			Random random = new Random();
+			double randomIncrement;
 			Velocity velocity = null;
 			Direction direction = null;
 			Point2D point2D = null;
 			Color color = null;
 			int numCars = random.nextInt(20, 25);
 
-			for (int i = 0; i < numCars; i++) {
+			ArrayList<Double> eastBoundCarXValues = new ArrayList<Double>();
+			ArrayList<Double> westBoundCarXValues = new ArrayList<Double>();
+			// Determine the x and y values for east and west bound car traffic
+			double eastBoundCarPlacement = 0;
+			double westBoundCarPlacement = 1000;
+			while (eastBoundCarPlacement < 1000) {
+				// Car is 75 pixels, add 80 to prevent pixels from causing an
+				// IllegalArgumentException for overlapping cars
+				eastBoundCarPlacement += random.nextDouble(80, 180);
+				eastBoundCarXValues.add(eastBoundCarPlacement);
+			}
+			while (westBoundCarPlacement > 0) {
+				westBoundCarPlacement -= random.nextDouble(80, 180);
+				westBoundCarXValues.add(westBoundCarPlacement);
+			}
 
-				if (random.nextBoolean()) {
-					direction = Direction.EAST;
-				} else {
-					direction = Direction.WEST;
-				}
-
-				switch (random.nextInt(3)) {
-				case 0 -> velocity = (direction == Direction.EAST ? Velocity.EAST_FIVE_MPH : Velocity.WEST_FIVE_MPH);
-				case 1 -> velocity = (direction == Direction.EAST ? Velocity.EAST_TEN_MPH : Velocity.WEST_TEN_MPH);
-				case 2 ->
-					velocity = (direction == Direction.EAST ? Velocity.EAST_FIFTEEN_MPH : Velocity.WEST_FIFTEEN_MPH);
-				}
-
-				point2D = new Point2D(random.nextDouble(100, 900), direction == Direction.EAST ? 160 : 120);
-
+			// Add EastBound cars
+			for (int i = 0; i < eastBoundCarXValues.size(); i++) {
+				point2D = new Point2D(eastBoundCarXValues.get(i), 160);
 				color = new Color(random.nextDouble(1.0), random.nextDouble(1.0), random.nextDouble(1.0), 1.0);
 
+				// Find a random velocity
+				switch (random.nextInt(3)) {
+				case 0 -> velocity = Velocity.EAST_FIVE_MPH;
+				case 1 -> velocity = Velocity.EAST_TEN_MPH;
+				case 2 -> velocity = Velocity.EAST_FIFTEEN_MPH;
+				}
+
+				// Add the finished car
+				randomizedCars.add(new Car(point2D, color, velocity, this));
+			}
+
+			// Add WestBound cars
+			for (int i = 0; i < westBoundCarXValues.size(); i++) {
+				point2D = new Point2D(westBoundCarXValues.get(i), 120);
+				color = new Color(random.nextDouble(1.0), random.nextDouble(1.0), random.nextDouble(1.0), 1.0);
+
+				// Find a random velocity
+				switch (random.nextInt(3)) {
+				case 0 -> velocity = Velocity.WEST_FIVE_MPH;
+				case 1 -> velocity = Velocity.WEST_TEN_MPH;
+				case 2 -> velocity = Velocity.WEST_FIFTEEN_MPH;
+				}
+
+				// Add the finished car
 				randomizedCars.add(new Car(point2D, color, velocity, this));
 			}
 
@@ -353,37 +436,30 @@ public class CarSimulationManager {
 
 	private ArrayList<Car> createTestingCars() {
 		ArrayList<Car> cars = new ArrayList<Car>();
-//
-//		cars.add(new Car(new Point2D(211.33583159925303, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(328.40155368399815, 120), Color.RED, Velocity.WEST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(376.6097020710003, 160), Color.YELLOW, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(876.2311643425588, 120), Color.PINK, Velocity.WEST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(756.1500180015739, 160), Color.BLUE, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(356.2754489258392, 120), Color.PURPLE, Velocity.WEST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(779.088915537401, 160), Color.ORANGE, Velocity.EAST_FIFTEEN_MPH, this));
 
 		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(120, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(220, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(240, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-
-		cars.add(new Car(new Point2D(100, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(80, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(60, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(220, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(240, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
+		cars.add(new Car(new Point2D(180, 160), Color.PINK, Velocity.EAST_FIFTEEN_MPH, this));
 //
-//		cars.add(new Car(new Point2D(900, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(775, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
+//		cars.add(new Car(new Point2D(370, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(470, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
+//
+//		cars.add(new Car(new Point2D(580, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(700, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
+//
+//		cars.add(new Car(new Point2D(830, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
+//		cars.add(new Car(new Point2D(1000, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
+//
+//		cars.add(new Car(new Point2D(100, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
+//		cars.add(new Car(new Point2D(180, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+//
+//		cars.add(new Car(new Point2D(370, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
+//		cars.add(new Car(new Point2D(470, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+//
+//		cars.add(new Car(new Point2D(580, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
+//		cars.add(new Car(new Point2D(700, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+//
+//		cars.add(new Car(new Point2D(830, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
+//		cars.add(new Car(new Point2D(1000, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
 
 		return cars;
 	}

@@ -26,6 +26,11 @@ public enum Velocity {
 	private final Speed speed;
 	private final Direction direction;
 
+	/**
+	 *
+	 * @param speed     the speed for velocity
+	 * @param direction the direction for velocity
+	 */
 	Velocity(Speed speed, Direction direction) {
 		this.speed = speed;
 		this.direction = direction;
@@ -43,5 +48,15 @@ public enum Velocity {
 	 */
 	public Direction getDirection() {
 		return direction;
+	}
+
+	public static Velocity from(Speed speed, Direction direction) {
+		for (Velocity v : values()) {
+			if ((v.speed == speed) && (v.direction == direction)) {
+				return v;
+			}
+		}
+		throw new IllegalArgumentException(
+				"Velocity.java in from -> No Velocity for speed " + speed + " and direction " + direction);
 	}
 }

@@ -19,24 +19,21 @@ public class TestingSpace extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		try {
-			root = new Pane();
-			root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
-			scene = new Scene(root, 1000, 400);
-			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
-			primaryStage.setScene(scene);
-			primaryStage.show();
 
-			// Start and name threads TODO delete rename after done debugging?
-			carProducerThread = new Thread(new CarProducer(carSimulationManager));
-			carMoverThread = new Thread(new CarMover(carSimulationManager));
-			carProducerThread.setName("carProducerThread");
-			carMoverThread.setName("carMoverThread");
-			carProducerThread.start();
-			carMoverThread.start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		root = new Pane();
+		root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
+		scene = new Scene(root, 1000, 400);
+		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+		primaryStage.setScene(scene);
+		primaryStage.show();
+
+		// Start and name threads TODO delete rename after done debugging?
+		carProducerThread = new Thread(new CarProducer(carSimulationManager));
+		carMoverThread = new Thread(new CarMover(carSimulationManager));
+		carProducerThread.setName("carProducerThread");
+		carMoverThread.setName("carMoverThread");
+		carProducerThread.start();
+		carMoverThread.start();
 	}
 
 	/**
