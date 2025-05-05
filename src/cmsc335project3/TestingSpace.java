@@ -21,7 +21,20 @@ public class TestingSpace extends Application {
 	public void start(Stage primaryStage) {
 
 		root = new Pane();
-		root.getChildren().add(carSimulationManager.getRoad().getCollisionShapeRoad());
+		root.getChildren().addAll(carSimulationManager.getRoad().getCollisionShapeRoad(),
+				carSimulationManager.getTrafficLights()[0].getIndicatorTrafficLight(),
+				carSimulationManager.getTrafficLights()[1].getIndicatorTrafficLight(),
+				carSimulationManager.getTrafficLights()[2].getIndicatorTrafficLight());
+// TODO delete
+		// root.getChildren().addAll(carSimulationManager.getRoad().getCollisionShapeRoad(),
+//				carSimulationManager.getTrafficLights()[0].getCollisionRadiusTrafficLight(),
+//				carSimulationManager.getTrafficLights()[1].getCollisionRadiusTrafficLight(),
+//				carSimulationManager.getTrafficLights()[2].getCollisionRadiusTrafficLight(),
+//				carSimulationManager.getTrafficLights()[0].getIndicatorTrafficLight(),
+//				carSimulationManager.getTrafficLights()[1].getIndicatorTrafficLight(),
+//				carSimulationManager.getTrafficLights()[2].getIndicatorTrafficLight());
+		// TODO delete
+
 		scene = new Scene(root, 1000, 400);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		primaryStage.setScene(scene);

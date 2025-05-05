@@ -26,7 +26,7 @@ public class Car {
 	// Declare variables
 	private Point2D positionCar;
 	private Polygon collisionShapeCar;
-	private Rectangle collisionRadius;
+	private Rectangle collisionRadiusCar;
 	private Color colorCar;
 	private Velocity velocityCar;
 	private final Speed preferredSpeed;
@@ -131,13 +131,10 @@ public class Car {
 	 */
 	public void updateCollisionRadiuses() {
 		// Create the car's collision radiuses
-		final double xPadding = 15;
+		final double xPadding = 10;
 		final double yPadding = 5;
-		collisionRadius = new Rectangle(positionCar.getX() - xPadding, positionCar.getY() - yPadding,
+		collisionRadiusCar = new Rectangle(positionCar.getX() - xPadding, positionCar.getY() - yPadding,
 				carWidth + (2 * xPadding), carHeight + (2 * yPadding));
-
-		collisionRadius.setFill(colorCar); // TODO delete
-
 	}
 
 	/**
@@ -176,27 +173,26 @@ public class Car {
 	 * This method checks if a car's collision radius intersects with another car's
 	 * collision radius and returns a boolean value based on this condition
 	 *
-	 * @param collisionRadius
-	 * @return
+	 * @param collisionRadiusCar
 	 */
-	public boolean isWithinCollisionRadius(Rectangle collisionRadius) {
-		boolean collidesWithOtherCar = false;
+	public boolean isWithinCollisionRadiusCar(Rectangle collisionRadiusCar) {
+		boolean isWithinCollisionRadiusCar = false;
 
-		if (this.collisionRadius == collisionRadius) {
+		if (this.collisionRadiusCar == collisionRadiusCar) {
 			// Do nothing. it is the same car's collision radius
-			collidesWithOtherCar = false;
+			isWithinCollisionRadiusCar = false;
 		} else if (this.getIsInitializedOnScreen()) {
 			// Ensure the car is on the screen
 			// Create and test the intersection
-			Shape intersection = Shape.intersect(this.collisionRadius, collisionRadius);
+			Shape intersection = Shape.intersect(this.collisionRadiusCar, collisionRadiusCar);
 			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
-				System.out.println("CollisionRadiusDetected"); // TODO delete
+				System.out.println("CollisionRadiusCarDetected"); // TODO delete
 				// If the two cars collide, return true
-				collidesWithOtherCar = true;
+				isWithinCollisionRadiusCar = true;
 			}
 		}
 
-		return collidesWithOtherCar;
+		return isWithinCollisionRadiusCar;
 	}
 
 	/**
@@ -243,10 +239,10 @@ public class Car {
 	}
 
 	/**
-	 * @return the collisionRadius
+	 * @return the collisionRadiusCar
 	 */
-	public Rectangle getCollisionRadius() {
-		return collisionRadius;
+	public Rectangle getCollisionRadiusCar() {
+		return collisionRadiusCar;
 	}
 
 	/**

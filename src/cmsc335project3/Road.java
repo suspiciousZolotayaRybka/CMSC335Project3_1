@@ -39,25 +39,6 @@ public class Road {
 		updateCollisionShapeRoad();
 	}
 
-//	TODO DELETE
-//	public void updateCollisionShapeRoad() {
-//
-//		collisionShapeRoad = new Polygon();
-//		double roadWidth = 80.0;
-//
-//		// Calculate the corners of the rectangle representing the road
-//		double x = positionRoad.getX();
-//		double y = positionRoad.getY();
-//
-//		// Define the four corners of the rectangle (road)
-//		collisionShapeRoad.getPoints().addAll(x, y - (roadWidth / 2), // Top-left
-//				x + lengthRoad, y - (roadWidth / 2), // Top-right
-//				x + lengthRoad, y + (roadWidth / 2), // Bottom-right
-//				x, y + (roadWidth / 2 // Bottom-left
-//				));
-//	}
-	// TODO update road shapes to look more realistic
-
 	/**
 	 * Assign border information to the collision shape according to Road's Point2D
 	 */
