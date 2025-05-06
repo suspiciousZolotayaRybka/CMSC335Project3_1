@@ -39,7 +39,7 @@ public class Car {
 	private static int carIDCount = 0;
 	private static final int carWidth = 80;
 	private static final int carHeight = 25;
-	private Label xyLabel;
+	private Label carLabel;
 
 	/**
 	 * Car constructor
@@ -57,8 +57,9 @@ public class Car {
 		preferredSpeed = velocityCar.getSpeed();
 		this.carSimulationManager = carSimulationManager;
 		carID = carIDCount++;
-		xyLabel = new Label(positionCar.toString());
-		xyLabel.setFont(Font.font("Roboto", 10));
+		carLabel = new Label();
+		carLabel.setFont(Font.font("Roboto", 20));
+		updateCarLabel();
 		updateCollisionShapeCar();
 		updateCollisionRadius();
 		updateCollisionRadiusForTrafficLight();
@@ -297,10 +298,10 @@ public class Car {
 	}
 
 	/**
-	 * @return the xyLabel
+	 * @return the carLabel
 	 */
-	public Label getXyLabel() {
-		return xyLabel;
+	public Label getCarLabel() {
+		return carLabel;
 	}
 
 	/**
@@ -349,10 +350,13 @@ public class Car {
 	}
 
 	/**
-	 * @param xyLabel the xyLabel to set
+	 * Update the carLabel
 	 */
-	public void setXyLabel(Label xyLabel) {
-		this.xyLabel = xyLabel;
+	public void updateCarLabel() {
+		// Change x for east and west bound cars
+		carLabel = new Label(String.format("CarX=%.2f%nSpeed=%.0fmph", positionCar.getX(),
+				velocityCar.getSpeed().getMiles() / velocityCar.getSpeed().getHours()));
+		carLabel.setLayoutX(positionCar.getX() - (velocityCar.getDirection() == Direction.EAST ? 0 : 80));
+		carLabel.setLayoutY(positionCar.getY() + (velocityCar.getDirection() == Direction.EAST ? +85 : -95));
 	}
-
 }

@@ -37,6 +37,12 @@ public class CarSimulationClock implements Runnable {
 	public void run() {
 		try {
 			while (carSimulationManager.isSimulationRunning()) {
+				// Check for pauses from the pause button
+				synchronized (carSimulationManager.getPauseLock()) {
+					while (carSimulationManager.isPaused()) {
+						carSimulationManager.getPauseLock().wait();
+					}
+				}
 				// update the clock every second
 				carSimulationManager.updateCarSimulationClockText();
 				Thread.sleep(1000);

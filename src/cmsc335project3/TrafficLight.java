@@ -49,18 +49,24 @@ public class TrafficLight implements Runnable {
 
 	@Override
 	public void run() {
-		while (carSimulationManager.isSimulationRunning()) {
-			try {
+		try {
+			while (carSimulationManager.isSimulationRunning()) {
+				// Check for pauses from the pause button
+				synchronized (carSimulationManager.getPauseLock()) {
+					while (carSimulationManager.isPaused()) {
+						carSimulationManager.getPauseLock().wait();
+					}
+				}
 				switch (tlc) {
 				case GREEN -> Thread.sleep(greenTimer * 1000);
 				case YELLOW -> Thread.sleep(yellowTimer * 1000);
 				case RED -> Thread.sleep(redTimer * 1000);
 				}
 				carSimulationManager.updateTrafficLight(this);
-			} catch (InterruptedException ie) {
-				System.out.println("Interrupted Exception in TrafficLight.java, run() method. Stack Trace below");
-				ie.printStackTrace();
 			}
+		} catch (InterruptedException ie) {
+			System.out.println("Interrupted Exception in TrafficLight.java, run() method. Stack Trace below");
+			ie.printStackTrace();
 		}
 	}
 

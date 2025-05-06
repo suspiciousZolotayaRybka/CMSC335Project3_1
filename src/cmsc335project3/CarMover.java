@@ -13,7 +13,12 @@ public class CarMover implements Runnable {
 		try {
 
 			while (carSimulationManager.isSimulationRunning()) {
-
+				// Check for pauses from the pause button
+				synchronized (carSimulationManager.getPauseLock()) {
+					while (carSimulationManager.isPaused()) {
+						carSimulationManager.getPauseLock().wait();
+					}
+				}
 				Thread.sleep(50);
 				carSimulationManager.moveCars();
 			}

@@ -35,6 +35,8 @@ public class CarSimulationManager {
 	private final Condition needAllCarsProduced = carSimulationManagerLock.newCondition();
 	private boolean isSimulationRunning = true;
 	private boolean isProducerProducing = true;
+	private volatile boolean isPaused = false;
+	private final Object pauseLock = new Object();
 
 	// TODO change to better data structure
 	private final CarSimulationClock carSimulationClock;
@@ -115,7 +117,7 @@ public class CarSimulationManager {
 					Label label = new Label((new Date()).toString());
 					label.setFont(Font.font("Roboto", 20));
 					label.setLayoutX(30);
-					label.setLayoutY(250);
+					label.setLayoutY(300);
 
 					carSimulationClock.setLabelCarSimulationClock(label);
 
@@ -185,6 +187,7 @@ public class CarSimulationManager {
 
 							// Remove, update, then add the car back
 							mainCarSimulation.getRoot().getChildren().remove(car.getCollisionShapeCar());
+							mainCarSimulation.getRoot().getChildren().remove(car.getCarLabel());
 
 							// Update car collision radiuses
 							car.updateCollisionShapeCar();
@@ -192,6 +195,8 @@ public class CarSimulationManager {
 							car.updateCollisionRadiusForTrafficLight();
 
 							mainCarSimulation.getRoot().getChildren().add(car.getCollisionShapeCar());
+							car.updateCarLabel();
+							mainCarSimulation.getRoot().getChildren().add(car.getCarLabel());
 						} finally {
 							// Unlock the thread
 							carSimulationManagerLock.unlock();
@@ -516,8 +521,8 @@ public class CarSimulationManager {
 			ArrayList<Double> eastBoundCarXValues = new ArrayList<Double>();
 			ArrayList<Double> westBoundCarXValues = new ArrayList<Double>();
 			// Determine the x and y values for east and west bound car traffic
-			double eastBoundCarPlacement = -2000;
-			double westBoundCarPlacement = 3000;
+			double eastBoundCarPlacement = -7000;
+			double westBoundCarPlacement = 8000;
 			while (eastBoundCarPlacement < -100) {
 				// Car is 75 pixels, add 160 to prevent pixels from causing an
 				// IllegalArgumentException for overlapping cars
@@ -567,26 +572,21 @@ public class CarSimulationManager {
 		return randomizedCars;
 	}
 
-	private ArrayList<Car> createTestingCars() {
-		ArrayList<Car> cars = new ArrayList<Car>();
-
-		int xCount = 1000;
-
-//		for (int x = 0; x < 20; x++) {
-//			cars.add(new Car(new Point2D(xCount, 120), Color.PINK, Velocity.WEST_FIFTEEN_MPH, this));
-//			xCount += 360;
-//		}
-
-		cars.add(new Car(new Point2D(800, 120), Color.PINK, Velocity.WEST_FIVE_MPH, this));
-		cars.add(new Car(new Point2D(xCount, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-		return cars;
+	public void setPaused(boolean paused) {
+		isPaused = paused;
+		if (!isPaused) {
+			synchronized (pauseLock) {
+				pauseLock.notifyAll();
+			}
+		}
 	}
 
-	private TrafficLight[] createTestingTrafficLights() {
-		TrafficLight[] trafficLights = new TrafficLight[] { new TrafficLight(new Point2D(220, 35), this, 3, 1, 1),
-				new TrafficLight(new Point2D(490, 35), this, 2, 1, 1),
-				new TrafficLight(new Point2D(770, 35), this, 1, 1, 1) };
-		return trafficLights;
+	public boolean isPaused() {
+		return isPaused;
+	}
+
+	public Object getPauseLock() {
+		return pauseLock;
 	}
 
 }
