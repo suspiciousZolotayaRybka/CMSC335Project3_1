@@ -16,7 +16,7 @@ package cmsc335project3;
 public class CarProducer implements Runnable {
 
 	private final CarSimulationManager carSimulationManager;
-	// TODO verify this is the best data structure
+	// TODO verify this is the best data structure - Future version improvement
 	// Queue FIFO may be more efficient
 
 	/**
@@ -37,9 +37,6 @@ public class CarProducer implements Runnable {
 			carSimulationManager.putCarsInSimulation();
 			carSimulationManager.setIsProducerProducing(false);
 		} finally {
-//			carSimulationManager.setIsProducerProducing(false);
-			// TODO delete print statements
-			System.out.println("Producer Finished");
 		}
 	}
 

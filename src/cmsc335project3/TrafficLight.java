@@ -22,7 +22,8 @@ public class TrafficLight implements Runnable {
 	// Declare variables
 	private final Point2D positionTrafficLight;
 	private Circle indicatorTrafficLight;
-	private Rectangle collisionRadiusTrafficLight;
+	private Rectangle eastBoundCollisionRadiusTrafficLight;
+	private Rectangle westBoundCollisionRadiusTrafficLight;
 	private Color colorTrafficLight = Color.GREEN;
 	private TrafficLightColor tlc = TrafficLightColor.GREEN;
 	private final int greenTimer;
@@ -43,7 +44,7 @@ public class TrafficLight implements Runnable {
 		this.yellowTimer = yellowTimer;
 		this.redTimer = redTimer;
 		updateIndicatorTrafficLight();
-		updateCollisionRadiusTrafficLight();
+		updateCollisionRadiusesTrafficLight();
 	}
 
 	@Override
@@ -79,19 +80,26 @@ public class TrafficLight implements Runnable {
 	 * Update the collisioRadius for the traffic light, which is a rectangle
 	 * representing the area that cars respect to stop and go
 	 */
-	public void updateCollisionRadiusTrafficLight() {
+	public void updateCollisionRadiusesTrafficLight() {
 		// Create the traffic light's collision radiuses
-		collisionRadiusTrafficLight = new Rectangle(positionTrafficLight.getX() - 38, positionTrafficLight.getY(), 75,
-				250);
+		eastBoundCollisionRadiusTrafficLight = new Rectangle(positionTrafficLight.getX() - 38,
+				positionTrafficLight.getY(), 1, 200);
+		westBoundCollisionRadiusTrafficLight = new Rectangle(positionTrafficLight.getX() + 38,
+				positionTrafficLight.getY(), 1, 200);
 	}
 
 	/**
-	 * TODO delete method?
-	 *
-	 * @return
+	 * @return the eastBoundCollisionRadiusTrafficLight
 	 */
-	public Rectangle getCollisionRadiusTrafficLight() {
-		return collisionRadiusTrafficLight;
+	public Rectangle getEastBoundCollisionRadiusTrafficLight() {
+		return eastBoundCollisionRadiusTrafficLight;
+	}
+
+	/**
+	 * @return the westBoundCollisionRadiusTrafficLight
+	 */
+	public Rectangle getWestBoundCollisionRadiusTrafficLight() {
+		return westBoundCollisionRadiusTrafficLight;
 	}
 
 	/**

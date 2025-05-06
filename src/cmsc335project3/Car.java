@@ -16,10 +16,12 @@ package cmsc335project3;
  */
 
 import javafx.geometry.Point2D;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
 
 public class Car {
 
@@ -27,6 +29,7 @@ public class Car {
 	private Point2D positionCar;
 	private Polygon collisionShapeCar;
 	private Rectangle collisionRadiusCar;
+	private Rectangle collisionRadiusForTrafficLight;
 	private Color colorCar;
 	private Velocity velocityCar;
 	private final Speed preferredSpeed;
@@ -36,6 +39,7 @@ public class Car {
 	private static int carIDCount = 0;
 	private static final int carWidth = 80;
 	private static final int carHeight = 25;
+	private Label xyLabel;
 
 	/**
 	 * Car constructor
@@ -53,8 +57,11 @@ public class Car {
 		preferredSpeed = velocityCar.getSpeed();
 		this.carSimulationManager = carSimulationManager;
 		carID = carIDCount++;
+		xyLabel = new Label(positionCar.toString());
+		xyLabel.setFont(Font.font("Roboto", 10));
 		updateCollisionShapeCar();
-		updateCollisionRadiuses();
+		updateCollisionRadius();
+		updateCollisionRadiusForTrafficLight();
 	}
 
 	/**
@@ -127,45 +134,44 @@ public class Car {
 	}
 
 	/**
-	 * Update the collisionRadiuses of the car
+	 * Update the collisionRadius of the car
 	 */
-	public void updateCollisionRadiuses() {
-		// Create the car's collision radiuses
-		final double xPadding = 10;
+	public void updateCollisionRadius() {
+		// Create the car's collision radius
+		final double xPadding = 30;
 		final double yPadding = 5;
-		collisionRadiusCar = new Rectangle(positionCar.getX() - xPadding, positionCar.getY() - yPadding,
-				carWidth + (2 * xPadding), carHeight + (2 * yPadding));
+
+		if (velocityCar.getDirection() == Direction.EAST) {
+			// Make an east bound collision radius
+			collisionRadiusCar = new Rectangle(positionCar.getX() - xPadding, positionCar.getY() - yPadding,
+					carWidth + (2 * xPadding), carHeight + (2 * yPadding));
+		} else {
+			// Make a west bound collision radius
+			collisionRadiusCar = new Rectangle(positionCar.getX() - 110, positionCar.getY() - yPadding,
+					carWidth + (2 * xPadding), carHeight + (2 * yPadding));
+		}
+
 	}
 
 	/**
-	 *
-	 * This method checks if a car collides with another car and returns a boolean
-	 * value based on this condition
-	 *
-	 * @param car_j
-	 * @return
+	 * The collisionRadiusForTrafficLight is identical to car collision radius
+	 * except only 5 pixels large, so cars don't stall in intersections
 	 */
-	public boolean collidesWith(Car car_j) {
-		boolean collidesWithOtherCar = false;
+	public void updateCollisionRadiusForTrafficLight() {
+		// Create the car's collision radius for traffic lights
+		// identical to car collision radius except only 5 pixels large, so cars don't
+		// stall in intersections
+		final double yPadding = 5;
 
-		if (this == car_j) {
-			// Do nothing. it is the same car
-			collidesWithOtherCar = false;
-		} else if (this.getIsInitializedOnScreen() || carSimulationManager.isProducerProducing()) {
-			// Check for collisions, the car is initialized on the screen
-
-			// Also check for collisions if the producer is producing
-			// The car will not be initialized on the screen in this case
-
-			Shape intersection = Shape.intersect(collisionShapeCar, car_j.getCollisionShapeCar());
-			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
-				System.out.println("BOOM"); // TODO delete
-				// If the two cars collide, return true
-				collidesWithOtherCar = true;
-			}
+		if (velocityCar.getDirection() == Direction.EAST) {
+			// Make an east bound collision radius
+			collisionRadiusForTrafficLight = new Rectangle(positionCar.getX() + 80, positionCar.getY() - yPadding, 5,
+					carHeight + (2 * yPadding));
+		} else {
+			// Make a west bound collision radius
+			collisionRadiusForTrafficLight = new Rectangle(positionCar.getX() - 90, positionCar.getY() - yPadding, 5,
+					carHeight + (2 * yPadding));
 		}
-
-		return collidesWithOtherCar;
 	}
 
 	/**
@@ -186,7 +192,6 @@ public class Car {
 			// Create and test the intersection
 			Shape intersection = Shape.intersect(collisionRadiusCar, collisionRadius);
 			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
-				System.out.println("CollisionRadiusCarDetected"); // TODO delete
 				// If the two cars collide, return true
 				isWithinCollisionRadius = true;
 			}
@@ -196,11 +201,42 @@ public class Car {
 	}
 
 	/**
+	 *
+	 * This method checks if a car collides with another car and returns a boolean
+	 * value based on this condition
+	 *
+	 * @param car_j
+	 * @return
+	 */
+	public boolean collidesWithCar(Car car_j) {
+		boolean collidesWithOtherCar = false;
+
+		if (this == car_j) {
+			// Do nothing. it is the same car
+			collidesWithOtherCar = false;
+		} else if (this.getIsInitializedOnScreen() || carSimulationManager.isProducerProducing()) {
+			// Check for collisions, the car is initialized on the screen
+
+			// Also check for collisions if the producer is producing
+			// The car will not be initialized on the screen in this case
+
+			Shape intersection = Shape.intersect(collisionShapeCar, car_j.getCollisionShapeCar());
+			if ((intersection.getBoundsInLocal().getWidth() > 0) && (intersection.getBoundsInLocal().getHeight() > 0)) {
+				// If the two cars collide, return true
+				collidesWithOtherCar = true;
+			}
+		}
+
+		return collidesWithOtherCar;
+	}
+
+	/**
 	 * Car String used for testing purposes
 	 */
 	@Override
 	public String toString() {
-		return String.format("Car#%d:position=%s,color=%s", carID, positionCar.toString(), colorCar.toString());
+		return String.format("Car#%d:isInitializedOnScreen=%s,color=%s,position=%s", carID, isInitializedOnScreen,
+				colorCar.toString(), positionCar.toString());
 	}
 
 	/**
@@ -215,6 +251,13 @@ public class Car {
 	 */
 	public Polygon getCollisionShapeCar() {
 		return collisionShapeCar;
+	}
+
+	/**
+	 * @return the collisionRadiusForTrafficLight
+	 */
+	public Rectangle getCollisionRadiusForTrafficLight() {
+		return collisionRadiusForTrafficLight;
 	}
 
 	/**
@@ -251,6 +294,13 @@ public class Car {
 	 */
 	public Speed getPreferredSpeed() {
 		return preferredSpeed;
+	}
+
+	/**
+	 * @return the xyLabel
+	 */
+	public Label getXyLabel() {
+		return xyLabel;
 	}
 
 	/**
@@ -299,10 +349,10 @@ public class Car {
 	}
 
 	/**
-	 * @return the carID
+	 * @param xyLabel the xyLabel to set
 	 */
-	public int getCarID() {
-		return carID;
+	public void setXyLabel(Label xyLabel) {
+		this.xyLabel = xyLabel;
 	}
 
 }

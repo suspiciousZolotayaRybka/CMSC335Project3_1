@@ -1,11 +1,23 @@
 package cmsc335project3;
 
+/* CMSC 335 7382 Object-Oriented and Concurrent Programming
+ * Professor Amitava Karmaker
+ * Project 3
+ * CarSimulationMain.java
+ * Isaac Finehout
+ * 13 April 2025
+ *
+ * This is the main class that runs the Project 3 program for CMSC 335.
+ * @author fineh
+ *
+ */
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
-public class TestingSpace extends Application {
+public class MainCarSimulation extends Application {
 
 	private Pane root;
 	private Scene scene;
@@ -15,8 +27,9 @@ public class TestingSpace extends Application {
 	private Thread trafficLightThread_0;
 	private Thread trafficLightThread_1;
 	private Thread trafficLightThread_2;
+	private Thread carSimulationClockThread;
 
-	public TestingSpace() {
+	public MainCarSimulation() {
 		carSimulationManager = new CarSimulationManager(this);
 	}
 
@@ -24,30 +37,31 @@ public class TestingSpace extends Application {
 	public void start(Stage primaryStage) {
 
 		root = new Pane();
+
+		// Add children to the pane
 		root.getChildren().addAll(carSimulationManager.getRoad().getCollisionShapeRoad(),
+				carSimulationManager.getTrafficLights()[0].getEastBoundCollisionRadiusTrafficLight(),
+				carSimulationManager.getTrafficLights()[1].getEastBoundCollisionRadiusTrafficLight(),
+				carSimulationManager.getTrafficLights()[2].getEastBoundCollisionRadiusTrafficLight(),
+				carSimulationManager.getTrafficLights()[0].getWestBoundCollisionRadiusTrafficLight(),
+				carSimulationManager.getTrafficLights()[1].getWestBoundCollisionRadiusTrafficLight(),
+				carSimulationManager.getTrafficLights()[2].getWestBoundCollisionRadiusTrafficLight(),
 				carSimulationManager.getTrafficLights()[0].getIndicatorTrafficLight(),
 				carSimulationManager.getTrafficLights()[1].getIndicatorTrafficLight(),
 				carSimulationManager.getTrafficLights()[2].getIndicatorTrafficLight());
-// TODO delete
-		// root.getChildren().addAll(carSimulationManager.getRoad().getCollisionShapeRoad(),
-//				carSimulationManager.getTrafficLights()[0].getCollisionRadiusTrafficLight(),
-//				carSimulationManager.getTrafficLights()[1].getCollisionRadiusTrafficLight(),
-//				carSimulationManager.getTrafficLights()[2].getCollisionRadiusTrafficLight(),
-//				carSimulationManager.getTrafficLights()[0].getIndicatorTrafficLight(),
-//				carSimulationManager.getTrafficLights()[1].getIndicatorTrafficLight(),
-//				carSimulationManager.getTrafficLights()[2].getIndicatorTrafficLight());
-		// TODO delete
 
-		scene = new Scene(root, 1000, 400);
+		scene = new Scene(root, 1600, 400);
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		primaryStage.setScene(scene);
 		primaryStage.show();
 
-		// Start and name threads TODO delete rename after done debugging?
+		// Start Threads
 		carProducerThread = new Thread(new CarProducer(carSimulationManager));
 		carMoverThread = new Thread(new CarMover(carSimulationManager));
+		carSimulationClockThread = new Thread(new CarSimulationClock(carSimulationManager));
 		carProducerThread.setName("carProducerThread");
 		carMoverThread.setName("carMoverThread");
+		carSimulationClockThread.setName("carSimulationClockThread");
 		TrafficLight[] trafficLights = carSimulationManager.getTrafficLights();
 		trafficLightThread_0 = new Thread(trafficLights[0]);
 		trafficLightThread_1 = new Thread(trafficLights[1]);
@@ -61,6 +75,7 @@ public class TestingSpace extends Application {
 		trafficLightThread_0.start();
 		trafficLightThread_1.start();
 		trafficLightThread_2.start();
+		carSimulationClockThread.start();
 
 	}
 

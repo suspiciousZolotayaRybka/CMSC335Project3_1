@@ -1,15 +1,19 @@
 package cmsc335project3;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 
 /* CMSC 335 7382 Object-Oriented and Concurrent Programming
  * Professor Amitava Karmaker
@@ -23,8 +27,6 @@ import javafx.scene.shape.Rectangle;
  *
  */
 
-//TODO 75 pixels car length DELETE
-
 public class CarSimulationManager {
 
 	// Concurrency items
@@ -35,23 +37,25 @@ public class CarSimulationManager {
 	private boolean isProducerProducing = true;
 
 	// TODO change to better data structure
-	private final TestingSpace testingSpace; // TODO change to main
+	private final CarSimulationClock carSimulationClock;
+	private final MainCarSimulation mainCarSimulation;
 	private final ArrayList<Car> cars;
-	private final Road road = new Road(1000, new Point2D(0, 150));
+	private final Road road = new Road(1600, new Point2D(0, 150));
 	private final TrafficLight[] trafficLights;
 	private int numberOfCarsVisibleOnScreen;
 
 	/**
 	 * Constructor for autopilot
 	 */
-	public CarSimulationManager(TestingSpace testingSpace) {
-		this.testingSpace = testingSpace;
+	public CarSimulationManager(MainCarSimulation mainCarSimulation) {
+		this.mainCarSimulation = mainCarSimulation;
+		carSimulationClock = new CarSimulationClock(this);
 
 		// TODO make simulation according to project requirements
 		cars = this.createRandomizedCars();
-//		cars = createTestingCars();// TODO delete
-//		trafficLights = createTrafficLights();
-		trafficLights = createTestingTrafficLights(); // TODO delete
+//		cars = createTestingCars();// TODO save this and helper method for future debugging
+		trafficLights = createTrafficLights();
+//		trafficLights = createTestingTrafficLights(); // TODO delete save this and helper method for future debugging
 		numberOfCarsVisibleOnScreen = 0;
 	}
 
@@ -82,7 +86,7 @@ public class CarSimulationManager {
 						continue;
 					}
 					// If the cars collide, add it to the set
-					if (car_i.collidesWith(car_j)) {
+					if (car_i.collidesWithCar(car_j)) {
 						collidingCars.add(car_i);
 						collidingCars.add(car_j);
 					}
@@ -95,59 +99,31 @@ public class CarSimulationManager {
 	}
 
 	/**
-	 * Check to see if cars are in one another's radius and slow those going faster
-	 * behind others
+	 * Update the clock
 	 */
-	public synchronized void findCollisionRadiusCarsAndSlowCarsBehindOthers() {
+	public void updateCarSimulationClockText() {
+
 		try {
 			carSimulationManagerLock.lock();
-			// Check for cars approaching other cars
-			Car car_i;
-			boolean isBehindAnotherCarRadius = false;
-			Rectangle collisionRadius_i;
-			Rectangle collisionRadius_j;
 
-			// Use a nested for loop to check each car against every other car
-			for (int i = 0; i < cars.size(); i++) {
-				car_i = cars.get(i);
-				collisionRadius_i = cars.get(i).getCollisionRadiusCar();
-				for (int j = i + 1; j < cars.size(); j++) {
-					// Only compare unique pairs, add 1 to i for starting j index
-					collisionRadius_j = cars.get(j).getCollisionRadiusCar();
-					if (car_i.getVelocityCar().getDirection() == Direction.EAST) {
-						// If the car is eastbound, check to see if a car is in front of its collision
-						// radius
-						if (car_i.isWithinCollisionRadius(collisionRadius_j)) {
-							// Only slow the car down if it is behind another car
-							// If the cars are moving east, this means the differences of x will be negative
-							if (((collisionRadius_i.getX()) - (collisionRadius_j.getX())) < 0) {
-								// slow down the car
-								isBehindAnotherCarRadius = true;
-								car_i.setVelocityCar(Velocity.EAST_FIVE_MPH);
-							}
-						}
-					} else {
-						// if the car is going westbound, check to see if a car is west in front of its
-						// collision radius
-						if (car_i.isWithinCollisionRadius(collisionRadius_j)) {
-							// Only slow the car down if it is behind another car
-							// If the cars are moving west, this means the differences of x will be positive
-							if (((collisionRadius_i.getX()) - (collisionRadius_j.getX())) > 0) {
-								// slow down the car
-								isBehindAnotherCarRadius = true;
-								car_i.setVelocityCar(Velocity.WEST_FIVE_MPH);
-							}
-						}
-					}
+			Platform.runLater(() -> {
+				try {
+					// Lock, get the new label, then continue running
+					carSimulationManagerLock.lock();
+					mainCarSimulation.getRoot().getChildren().remove(carSimulationClock.getLabelCarSimulationClock());
 
-					// If the car is not behind another car, speed it up!
-					if (!isBehindAnotherCarRadius) {
-						Velocity newVelocity = Velocity.from(car_i.getPreferredSpeed(),
-								car_i.getVelocityCar().getDirection());
-						car_i.setVelocityCar(newVelocity);
-					}
+					Label label = new Label((new Date()).toString());
+					label.setFont(Font.font("Roboto", 20));
+					label.setLayoutX(30);
+					label.setLayoutY(250);
+
+					carSimulationClock.setLabelCarSimulationClock(label);
+
+					mainCarSimulation.getRoot().getChildren().add(carSimulationClock.getLabelCarSimulationClock());
+				} finally {
+					carSimulationManagerLock.unlock();
 				}
-			}
+			});
 
 		} finally {
 			carSimulationManagerLock.unlock();
@@ -165,51 +141,63 @@ public class CarSimulationManager {
 				needAllCarsProduced.await();
 			}
 
+			// This removes cars from the simulation if they collide
+			// Future versions could implement live "crashes" instead of removing the cars
+			try {
+				carSimulationManagerLock.lock();
+				removeCollidingCars(findCollidingCars());
+			} finally {
+				carSimulationManagerLock.unlock();
+			}
+
 			// The direction and speed of the car to move
 			Direction direction;
-			double speedMilesPerHour;
 
 			for (Car car : cars) {
+				direction = car.getVelocityCar().getDirection();
 
 				if (car.getIsInitializedOnScreen()) {
-					// Update the car location based on direction and speed
-					direction = car.getVelocityCar().getDirection();
-					speedMilesPerHour = car.getVelocityCar().getSpeed().getMiles()
-							/ car.getVelocityCar().getSpeed().getHours();
+					// Set car to preferred velocity
+					car.setVelocityCar(Velocity.from(car.getPreferredSpeed(), direction));
 
-				//@formatter:off
-				double acceleration = 0.35 *
-						(direction == Direction.EAST ?
-								speedMilesPerHour :
-									speedMilesPerHour * -1);
-				//@formatter:on
+					// Find the car's predictedDeltaX
+					double predictedDeltaX = findDeltaX(direction, car.getVelocityCar().getSpeed());
+
+					// Set velocity to 0 MPH if it is not safe to move ahead
+					if (!(findIsSafeToMoveAheadNoCarsInWay(car, direction, predictedDeltaX))) {
+						car.setVelocityCar(Velocity.from(Speed.ZERO_MILES_PER_HOUR, direction));
+					}
+					if (!(findIsSafeToMoveAheadNoTrafficLightsInWay(car, direction))) {
+						car.setVelocityCar(Velocity.from(Speed.ZERO_MILES_PER_HOUR, direction));
+					}
+
+					// Find the cars final deltaX
+					double finalDeltaX = findDeltaX(direction, car.getVelocityCar().getSpeed());
+
+					// Update the car's position
 					car.setPositionCar(
-							new Point2D(car.getPositionCar().getX() + acceleration, car.getPositionCar().getY()));
+							new Point2D(car.getPositionCar().getX() + finalDeltaX, car.getPositionCar().getY()));
+
 					Platform.runLater(() -> {
 						try {
 							// Lock for the GUI update
 							carSimulationManagerLock.lock();
+
 							// Remove, update, then add the car back
-							testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
+							mainCarSimulation.getRoot().getChildren().remove(car.getCollisionShapeCar());
+
+							// Update car collision radiuses
 							car.updateCollisionShapeCar();
-							car.updateCollisionRadiuses();
-							testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+							car.updateCollisionRadius();
+							car.updateCollisionRadiusForTrafficLight();
+
+							mainCarSimulation.getRoot().getChildren().add(car.getCollisionShapeCar());
 						} finally {
 							// Unlock the thread
 							carSimulationManagerLock.unlock();
 						}
 					});
 				}
-			}
-			// Check for and remove car collisions
-			// Slow cars moving faster behind others
-			try {
-				carSimulationManagerLock.lock();
-				findCollisionRadiusCarsAndSlowCarsBehindOthers(); // TODO stop if car in front is stopped
-				removeCollidingCars(findCollidingCars());
-				findCollisionRadiusTrafficLightAndStop(); // TODO change based on colors
-			} finally {
-				carSimulationManagerLock.unlock();
 			}
 
 			// Check for and slow down cars in each others radius
@@ -219,16 +207,6 @@ public class CarSimulationManager {
 			} finally {
 				carSimulationManagerLock.unlock();
 			}
-			// TODO delete
-			System.out.printf("cars.size()=%d%n,numberOfCarsVisibleOnScreen=%d%n", cars.size(),
-					numberOfCarsVisibleOnScreen);
-			for (int i = 0; i < cars.size(); i++) {
-				if (cars.get(i).getIsInitializedOnScreen()) {
-					System.out.printf("%s%n", cars.get(i).toString());
-				}
-			}
-			System.out.println("\n======\n");
-// TODO delete
 		} catch (
 
 		InterruptedException ie) {
@@ -236,6 +214,116 @@ public class CarSimulationManager {
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
+	}
+
+	/**
+	 * DeltaX is the change in x positions of a car
+	 *
+	 * @param direction
+	 * @param speedMilesPerHour
+	 * @return
+	 */
+	public double findDeltaX(Direction direction, Speed speedMilesPerHour) {
+		double speed = speedMilesPerHour.getMiles() / speedMilesPerHour.getHours();
+		double deltaX = 0.35 * (direction == Direction.EAST ? speed : speed * -1);
+		return deltaX;
+	}
+
+	/**
+	 *
+	 * @param car
+	 * @param acceleration
+	 * @return
+	 */
+	public boolean findIsSafeToMoveAheadNoCarsInWay(Car car, Direction direction, double deltaX) {
+		double predictedX = car.getPositionCar().getX() + deltaX;
+		Rectangle futureCarBounds = null;
+
+		if (direction == Direction.EAST) {
+			futureCarBounds = new Rectangle(predictedX, car.getPositionCar().getY(),
+					car.getCollisionRadiusCar().getWidth(), car.getCollisionRadiusCar().getHeight());
+		} else {
+			// Car is moving WEST
+			futureCarBounds = new Rectangle(predictedX - 110, car.getPositionCar().getY(),
+					car.getCollisionRadiusCar().getWidth(), car.getCollisionRadiusCar().getHeight());
+		}
+
+		// Find the closest car ahead
+		Car carAhead = null;
+		double closestDistance = Double.MAX_VALUE;
+		boolean isSafeToMoveNoCarsInWay = true;
+
+		for (Car otherCar : cars) {
+			// If the car is the same, continue
+			if ((otherCar == car) || !otherCar.getIsInitializedOnScreen()) {
+				continue;
+			}
+
+			Direction otherDirection = otherCar.getVelocityCar().getDirection();
+			if (otherDirection != direction) {
+				continue;
+			} // Must be moving in same direction
+
+			double dx = otherCar.getPositionCar().getX() - car.getPositionCar().getX();
+			boolean isAhead = ((direction == Direction.EAST) && (dx > 0))
+					|| ((direction == Direction.WEST) && (dx < 0));
+			if (isAhead && (Math.abs(dx) < closestDistance)) {
+				closestDistance = Math.abs(dx);
+				carAhead = otherCar;
+			}
+		}
+
+		if (carAhead != null) {
+			// Cars are moving west
+			Bounds carAheadBounds = carAhead.getCollisionRadiusCar().getBoundsInParent();
+			if (futureCarBounds.getBoundsInParent().intersects(carAheadBounds)) {
+				isSafeToMoveNoCarsInWay = false;
+			}
+		}
+		return isSafeToMoveNoCarsInWay;
+	}
+
+	/**
+	 * This detects traffic light collisions and updates the cars accordingly
+	 */
+	public boolean findIsSafeToMoveAheadNoTrafficLightsInWay(Car car, Direction direction) {
+
+		boolean isSafeToMoveAheadNoTrafficLightsInWay = true;
+		Bounds carTrafficLightBounds = car.getCollisionRadiusForTrafficLight().getBoundsInParent();
+
+		// Loop over each traffic light with one car
+		for (TrafficLight trafficLight : trafficLights) {
+
+			// If the car is eastbound and is not colliding with an eastbound traffic light
+			// or if the car is westbound and is not colliding with a westbound traffic
+			// light continue the loop
+			if (direction == Direction.EAST) {
+				Bounds eastBoundTrafficLightBounds = trafficLight.getEastBoundCollisionRadiusTrafficLight()
+						.getBoundsInParent();
+				if (!(carTrafficLightBounds.intersects(eastBoundTrafficLightBounds))) {
+					continue;
+				}
+			} else {
+				Bounds westBoundTrafficLightBounds = trafficLight.getWestBoundCollisionRadiusTrafficLight()
+						.getBoundsInParent();
+
+				if (!(carTrafficLightBounds.intersects(westBoundTrafficLightBounds))) {
+					continue;
+				}
+			}
+
+			// If the loops continued all three times the car is not at a traffic light, and
+			// the check below will skip
+
+			// If the car is at a traffic light, check and see if it is green, yellow, or
+			// red, and update accoringly
+			if (trafficLight.getColorTrafficLight() == Color.GREEN) {
+				isSafeToMoveAheadNoTrafficLightsInWay = true;
+			} else {
+				isSafeToMoveAheadNoTrafficLightsInWay = false;
+			}
+		}
+		return isSafeToMoveAheadNoTrafficLightsInWay;
 	}
 
 	/**
@@ -254,9 +342,7 @@ public class CarSimulationManager {
 				try {
 					carSimulationManagerLock.lock();
 					for (Car car : cars) {
-						// TODO delete print statement later
-						System.out.printf("CarSimulatorManagerCriticalSection:%s%n", car.toString());
-						testingSpace.getRoot().getChildren().add(car.getCollisionShapeCar());
+						mainCarSimulation.getRoot().getChildren().add(car.getCollisionShapeCar());
 
 						// Allow the moveCar method to move the car once unlocked
 						car.setIsInitializedOnScreen(true);
@@ -290,24 +376,6 @@ public class CarSimulationManager {
 	}
 
 	/**
-	 * TODO change method so cars stop for yellow and red only
-	 */
-	public void findCollisionRadiusTrafficLightAndStop() {
-		HashSet<Car> carsAtStreetLights = new HashSet<>();
-
-		for (Car car : cars) {
-			for (TrafficLight trafficLight : trafficLights) {
-				if (car.isWithinCollisionRadius(trafficLight.getCollisionRadiusTrafficLight())) {
-					car.setVelocityCar(Velocity.from(Speed.ZERO_MILES_PER_HOUR, car.getVelocityCar().getDirection()));
-					// Skip over next iterations, car is already at a traffic light
-					continue;
-				}
-			}
-		}
-
-	}
-
-	/**
 	 *
 	 * @param the collidingCars to be removed from the GUI
 	 */
@@ -320,11 +388,12 @@ public class CarSimulationManager {
 					carSimulationManagerLock.lock();
 
 					for (Car car : collidingCars) {
-						testingSpace.getRoot().getChildren().remove(car.getCollisionShapeCar());
+						mainCarSimulation.getRoot().getChildren().remove(car.getCollisionShapeCar());
 						car.setIsInitializedOnScreen(false);
 						numberOfCarsVisibleOnScreen--;
 
 						if (numberOfCarsVisibleOnScreen == 0) {
+							System.out.println("SIM OVER");
 							isSimulationRunning = false;
 						}
 					}
@@ -348,9 +417,9 @@ public class CarSimulationManager {
 	 * @return the traffic lights to return
 	 */
 	public TrafficLight[] createTrafficLights() {
-		TrafficLight[] trafficLights = new TrafficLight[] { new TrafficLight(new Point2D(220, 35), this, 10, 2, 12),
-				new TrafficLight(new Point2D(490, 35), this, 10, 2, 12),
-				new TrafficLight(new Point2D(770, 35), this, 10, 2, 12) };
+		TrafficLight[] trafficLights = new TrafficLight[] { new TrafficLight(new Point2D(300, 35), this, 10, 2, 12),
+				new TrafficLight(new Point2D(800, 35), this, 10, 2, 12),
+				new TrafficLight(new Point2D(1300, 35), this, 10, 2, 12) };
 		return trafficLights;
 	}
 
@@ -369,8 +438,8 @@ public class CarSimulationManager {
 			}
 			Platform.runLater(() -> {
 				// Update the traffic light color
-				testingSpace.getRoot().getChildren().remove(trafficLight.getIndicatorTrafficLight());
-				testingSpace.getRoot().getChildren().add(trafficLight.getIndicatorTrafficLight());
+				mainCarSimulation.getRoot().getChildren().remove(trafficLight.getIndicatorTrafficLight());
+				mainCarSimulation.getRoot().getChildren().add(trafficLight.getIndicatorTrafficLight());
 			});
 
 		} finally {
@@ -449,14 +518,14 @@ public class CarSimulationManager {
 			// Determine the x and y values for east and west bound car traffic
 			double eastBoundCarPlacement = -2000;
 			double westBoundCarPlacement = 3000;
-			while (eastBoundCarPlacement < 0) {
-				// Car is 75 pixels, add 80 to prevent pixels from causing an
+			while (eastBoundCarPlacement < -100) {
+				// Car is 75 pixels, add 160 to prevent pixels from causing an
 				// IllegalArgumentException for overlapping cars
-				eastBoundCarPlacement += random.nextDouble(80, 180);
+				eastBoundCarPlacement += random.nextDouble(160, 200);
 				eastBoundCarXValues.add(eastBoundCarPlacement);
 			}
-			while (westBoundCarPlacement > 1000) {
-				westBoundCarPlacement -= random.nextDouble(80, 180);
+			while (westBoundCarPlacement > 1100) {
+				westBoundCarPlacement -= random.nextDouble(160, 200);
 				westBoundCarXValues.add(westBoundCarPlacement);
 			}
 
@@ -495,37 +564,21 @@ public class CarSimulationManager {
 		} finally {
 			carSimulationManagerLock.unlock();
 		}
-
 		return randomizedCars;
 	}
 
 	private ArrayList<Car> createTestingCars() {
 		ArrayList<Car> cars = new ArrayList<Car>();
 
-		cars.add(new Car(new Point2D(100, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-		cars.add(new Car(new Point2D(180, 160), Color.PINK, Velocity.EAST_TEN_MPH, this));
-//
-//		cars.add(new Car(new Point2D(370, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(470, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
-//
-//		cars.add(new Car(new Point2D(580, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(700, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
-//
-//		cars.add(new Car(new Point2D(830, 160), Color.BLACK, Velocity.EAST_FIFTEEN_MPH, this));
-//		cars.add(new Car(new Point2D(1000, 160), Color.BLACK, Velocity.EAST_FIVE_MPH, this));
-//
-//		cars.add(new Car(new Point2D(100, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
-//		cars.add(new Car(new Point2D(180, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-//
-//		cars.add(new Car(new Point2D(370, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
-//		cars.add(new Car(new Point2D(470, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-//
-//		cars.add(new Car(new Point2D(580, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
-//		cars.add(new Car(new Point2D(700, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
-//
-//		cars.add(new Car(new Point2D(830, 120), Color.BLACK, Velocity.WEST_FIVE_MPH, this));
-//		cars.add(new Car(new Point2D(1000, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
+		int xCount = 1000;
 
+//		for (int x = 0; x < 20; x++) {
+//			cars.add(new Car(new Point2D(xCount, 120), Color.PINK, Velocity.WEST_FIFTEEN_MPH, this));
+//			xCount += 360;
+//		}
+
+		cars.add(new Car(new Point2D(800, 120), Color.PINK, Velocity.WEST_FIVE_MPH, this));
+		cars.add(new Car(new Point2D(xCount, 120), Color.BLACK, Velocity.WEST_FIFTEEN_MPH, this));
 		return cars;
 	}
 
