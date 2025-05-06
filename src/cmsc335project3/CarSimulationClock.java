@@ -17,8 +17,6 @@ import javafx.scene.control.Label;
 import javafx.scene.text.Font;
 
 public class CarSimulationClock implements Runnable {
-
-//	private final CarSimulationManager carSimulationManager; // TODO delete?
 	private Label labelCarSimulationClock;
 	private final CarSimulationManager carSimulationManager;
 

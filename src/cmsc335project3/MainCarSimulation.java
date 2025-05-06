@@ -25,6 +25,19 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+/* CMSC 335 7382 Object-Oriented and Concurrent Programming
+ * Professor Amitava Karmaker
+ * Project 3
+ * MainCarSimulator.java
+ * Isaac Finehout
+ * 5 May 2025
+ *
+ * This is the main GUI implementation of the car simulator
+ *
+ * @author fineh
+ *
+ */
+
 public class MainCarSimulation extends Application {
 
 	// Class variables
@@ -157,7 +170,6 @@ public class MainCarSimulation extends Application {
 		startButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
-				System.out.println("START");
 				// Start Threads
 				carProducerThread = new Thread(new CarProducer(carSimulationManager));
 				carMoverThread = new Thread(new CarMover(carSimulationManager));

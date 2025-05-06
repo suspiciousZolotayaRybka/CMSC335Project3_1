@@ -16,7 +16,7 @@ package cmsc335project3;
 public class CarProducer implements Runnable {
 
 	private final CarSimulationManager carSimulationManager;
-	// TODO verify this is the best data structure - Future version improvement
+	// verify this is the best data structure - Future version improvement
 	// Queue FIFO may be more efficient
 
 	/**

@@ -20,9 +20,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 
 public class Road {
-
-	// TODO getters and setters or final?
-	// Declare variables
 	private final Point2D positionRoad;
 	private final double lengthRoad;
 	private Group collisionShapeRoad;

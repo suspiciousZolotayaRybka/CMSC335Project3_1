@@ -38,7 +38,7 @@ public class CarSimulationManager {
 	private volatile boolean isPaused = false;
 	private final Object pauseLock = new Object();
 
-	// TODO change to better data structure
+	// change to better data structure in future versions
 	private final CarSimulationClock carSimulationClock;
 	private final MainCarSimulation mainCarSimulation;
 	private final ArrayList<Car> cars;
@@ -52,12 +52,8 @@ public class CarSimulationManager {
 	public CarSimulationManager(MainCarSimulation mainCarSimulation) {
 		this.mainCarSimulation = mainCarSimulation;
 		carSimulationClock = new CarSimulationClock(this);
-
-		// TODO make simulation according to project requirements
 		cars = this.createRandomizedCars();
-//		cars = createTestingCars();// TODO save this and helper method for future debugging
 		trafficLights = createTrafficLights();
-//		trafficLights = createTestingTrafficLights(); // TODO delete save this and helper method for future debugging
 		numberOfCarsVisibleOnScreen = 0;
 	}
 
@@ -409,11 +405,6 @@ public class CarSimulationManager {
 			});
 		}
 
-	}
-
-	public void takeCarFromSimulationAndDelete() {
-		// TODO delete just to remove lastItem warning
-//		delete this method?
 	}
 
 	/**

@@ -51,6 +51,7 @@ public class TrafficLight implements Runnable {
 	public void run() {
 		try {
 			while (carSimulationManager.isSimulationRunning()) {
+
 				// Check for pauses from the pause button
 				synchronized (carSimulationManager.getPauseLock()) {
 					while (carSimulationManager.isPaused()) {
@@ -62,6 +63,7 @@ public class TrafficLight implements Runnable {
 				case YELLOW -> Thread.sleep(yellowTimer * 1000);
 				case RED -> Thread.sleep(redTimer * 1000);
 				}
+
 				carSimulationManager.updateTrafficLight(this);
 			}
 		} catch (InterruptedException ie) {
